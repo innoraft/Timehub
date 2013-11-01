@@ -1,0 +1,5 @@
+name = Attach Form
+description = to attach form with content type
+files[] = attach_form.module
+core = 7.x
+package = view

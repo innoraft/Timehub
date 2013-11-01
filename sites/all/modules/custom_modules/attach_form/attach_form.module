@@ -1,0 +1,58 @@
+<?php
+
+//Display 'create invoice page'
+function attach_form_form($form,&$form_state){
+  $form = array();
+  
+  //Select project name
+  $query1 = db_select('node', 'n');
+  $query1
+         ->fields('n', array('type','title'))
+         ->condition('n.type','project_entry');
+  $result1 = $query1->execute();
+  
+  $options = array();
+  $options[NULL] = '-Any-';
+  foreach ($result1 as $value1) {
+    $options[$value1->title] = $value1->title;
+  }
+  
+  $form['projects'] = array(
+    '#type' => 'select',
+    '#title' => 'Project Name',
+    '#options' => $options
+  );
+  
+  $form['issues'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Issue Number'
+  );
+  
+  $form['apply'] = array(
+    '#type' => 'button',
+    '#value' => 'Apply'
+  );
+  
+  $form['#submit'][] = 'submit_invoice';
+  
+  return $form;
+}
+
+//Move to 'invoice page' with nids whom checkbox select 
+function submit_invoice($form,&$form_state){
+  $nids = array();
+  global $base_url;
+  
+  $keys = array_keys($form_state['values']['data']);
+  $nodes = node_load_multiple($keys);
+  foreach ($nodes as $node) {
+    //Save invoice and assign key(nid) whose value not equal to zero
+    if($form_state['values']['data'][$node->nid] != 0){
+      $nids[] = $node->nid;
+      $node->field_invoice['und'][0]['value'] = 'Invoice';
+      node_save($node);
+    }
+  }
+  $nid = implode(',', $nids);
+  drupal_goto($base_url."/invoice/".$nid);
+}

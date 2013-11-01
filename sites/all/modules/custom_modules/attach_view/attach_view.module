@@ -1,0 +1,382 @@
+<?php
+
+function attach_view_menu(){
+  $items = array();  
+  
+  $items['invoice'] = array(
+    'page callback' => 'invoice',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM
+  ); 
+  
+  $items['invoice_report'] = array(
+    'title' => 'Invoice Report',
+    'page callback' => 'invoice_report',
+    'access callback' => 'invoice_report_access',
+    'type' => MENU_NORMAL_ITEM
+  ); 
+  
+  $items['create_invoice'] = array(
+    'title' => 'Create Invoice',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('attach_form_form'),
+    'access callback' => 'create_invoice_access',
+    'type' => MENU_NORMAL_ITEM
+  ); 
+  
+  return $items;
+}
+
+//'invoice report page' will not access by developer
+function  invoice_report_access(){
+  global $user;
+  if(in_array('Developer', $user->roles)){
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+//'create invoice page' will not access by developer
+function  create_invoice_access(){
+  global $user;
+  if(in_array('Developer', $user->roles)){
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+//Display timesheet entry at 'invoice page' according to 'invoice' checked at 'create invoice page'
+function  invoice($values = ''){
+  $header = array('project Nmae','Issue Number','work Hour');
+  $rows = array();
+  
+  $nids = explode(',',$values);
+  $nodes1 = node_load_multiple($nids);
+  
+  //Select distinct project name with related nids
+  $arr = array();
+  foreach ($nodes1 as $node1) {
+    $project_name = node_load($node1->field_project_name['und'][0]['target_id']);
+    $arr[$project_name->title][] = $node1->nid;
+  }
+  
+  foreach ($arr as $ar) {
+    $total = 0;
+    $nodes2 = node_load_multiple($ar);
+    foreach ($nodes2 as $node2) {    
+      $project_name = node_load($node2->field_project_name['und'][0]['target_id']);
+      $rows[] = array($project_name->title,$node2->field_issue_number['und'][0]['value'],secToHM($node2->field_work_hour['und'][0]['value']));
+      $total += $node2->field_work_hour['und'][0]['value'];
+    }
+    $rows[] = array('','',"Total = ".secToHM($total));
+  }
+  return theme('table', array('header' => $header, 'rows' => $rows));
+}
+
+//Display timesheet entry at 'invoice report page' according to 'invoice' checked at 'report view'
+function invoice_report(){
+  $header = array('project Nmae','Issue Number','work Hour');
+  $rows = array();
+  
+  //Select distinct project name target id for further use
+  $query1 = db_select('field_data_field_project_name', 'pn');
+  $query1->fields('pn', array('field_project_name_target_id'))
+         ->distinct();
+  $result1 = $query1->execute();
+  
+  //Display timesheet entry according to group by project name
+  foreach ($result1 as $value1) {
+    $query = new EntityFieldQuery;
+    $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'timesheet_entry')
+    ->fieldCondition('field_project_name', 'target_id', $value1->field_project_name_target_id)
+    ->fieldCondition('field_invoice', 'value', 'Invoice');
+    $results = $query->execute();
+
+    $total = 0;
+    if (!empty($results['node'])) {
+      $nids = array_keys($results['node']);
+      $nodes = node_load_multiple($nids);
+
+      foreach ($nodes as $node) {
+        $project_name = node_load($node->field_project_name['und'][0]['target_id']);
+        $rows[] = array($project_name->title,$node->field_issue_number['und'][0]['value'],secToHM($node->field_work_hour['und'][0]['value']));
+        $total += $node->field_work_hour['und'][0]['value'];
+      }
+      $rows[] = array('','',"Total = ".secToHM($total));
+    }
+  }
+  
+  return theme('table', array('header' => $header, 'rows' => $rows));
+}
+
+//Display hour and minute as two digit 
+function ensure2Digit($number) {
+    if($number < 10) {
+        $number = '0' . $number;
+    }
+    return $number;
+}
+
+//Convert second to hour:minute format
+function secToHM($sec){
+  $hour = ensure2Digit(floor($sec/3600));
+  $min = ensure2Digit(floor(($sec%3600)/60));
+  return "$hour:$min";
+}
+
+//Developer not able to edit 'timesheet_entry' which approved by project manager. 
+function attach_view_node_access($node, $op, $account){
+  global $user;
+    if(in_array('Developer', $user->roles)){
+      if(isset($node->field_approvednot_approved['und'][0]['value'])){
+        if($node->field_approvednot_approved['und'][0]['value'] == 'Approved'){
+          return NODE_ACCESS_DENY;
+        }
+        else {
+          return NODE_ACCESS_ALLOW;
+        }
+      }
+    }
+}
+
+//After submit 'timesheet_entry', view display based on current user. 
+function attach_view_node_insert($node) {
+  global $user;
+  global $base_url;
+  if($node->type == 'timesheet_entry') {
+    if(in_array('Developer', $user->roles)){
+      drupal_goto($base_url."/timesheet");
+    }
+    elseif (in_array('Project Manager', $user->roles)) {
+      drupal_goto($base_url."/timesheet-pm");
+    }
+  }
+}
+
+function  attach_view_form_alter(&$form,&$form_state,$form_id){
+  global $user; 
+  if($form_id == 'attach_form_form'){
+    if (in_array("Project Manager",$user->roles)) {
+     $form['submit']['#type'] = FALSE;
+    }
+  }
+  
+  //Alter 'create invoice page' to display timesheet entry 
+  if($form_id == 'attach_form_form'){
+    if (in_array("Project Manager",$user->roles)) {
+      $header = array('project Nmae','Issue Number','work Hour');
+      $rows = array();
+     
+      //Check either project name select with 'select list' or not 
+      $projects = NULL;
+      if(isset($form_state['values']['projects'])){
+        $projects = $form_state['values']['projects'];
+      }  
+      //Get nid of selected project name for futher use
+      $query2 = db_select('node', 'n');
+      $query2
+            ->fields('n', array('nid','title'));
+             if($projects != NULL){
+               $query2->condition('n.title',$projects);
+             }
+      $result2 = $query2->execute();
+      $value2 = $result2->fetch();
+        
+      //Check either issue number given to 'text field' or not
+      $issues = NULL;
+      if(isset($form_state['values']['issues'])){
+        if($form_state['values']['issues'] != NULL){
+          $str = $form_state['values']['issues'];
+          $issues = explode(',',$str);
+        }
+      }     
+      //Select node nids according to project name and issue number
+      $query = new EntityFieldQuery;
+      $query->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'timesheet_entry')
+            ->fieldCondition('field_invoice', 'value', 'Not Invoice');
+      if($issues != NULL){
+        $query->fieldCondition('field_issue_number', 'value', $issues);
+      }       
+      if($projects != NULL){
+        $query->fieldCondition('field_project_name', 'target_id', $value2->nid);
+      } 
+      $results = $query->execute();
+
+      if (!empty($results['node'])) {
+        $nids = array_keys($results['node']);
+        $nodes = node_load_multiple($nids);
+
+        foreach ($nodes as $node) {
+         $project_name = node_load($node->field_project_name['und'][0]['target_id']);
+         $rows[$node->nid] = array($project_name->title,$node->field_issue_number['und'][0]['value'],secToHM($node->field_work_hour['und'][0]['value']));
+        }
+        $form['data'] = array(
+          '#type' => 'tableselect',
+          '#header' => $header,
+          '#options' => $rows
+        );
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => 'Create'
+        );
+      }     
+    }
+  }
+  
+  if($form_id == 'timesheet_entry_node_form'){
+    if (in_array("Developer",$user->roles)) {
+     $form['field_approvednot_approved']['#access'] = FALSE;
+     $form['field_invoice']['#access'] = FALSE;
+    }
+  }
+  
+  if($form_id == 'timesheet_entry_node_form'){
+    if (in_array("Project Manager",$user->roles)) {
+      $form['field_invoice']['#access'] = FALSE;
+    }
+  }
+  
+  //Admin name not mentioned at 'member exposed filter' of 'report view'
+  if($form_id == 'views_exposed_form'){
+       $query1 = db_select('users', 'u');
+       $query1->fields('u', array('name'));
+       $result1 = $query1->execute();
+    
+       $query2 = db_select('role', 'r');
+       $query2
+           ->fields('r', array('rid','name'))
+           ->condition('r.name','administrator');
+       $result2 = $query2->execute();
+       $value2 = $result2->fetch();
+       
+       $query3 = db_select('users_roles', 'ur');
+       $query3
+           ->fields('ur', array('uid','rid'))
+           ->condition('ur.rid',$value2->rid);
+       $result3 = $query3->execute();
+       $value3 = $result3->fetch();
+       
+       $query4 = db_select('users', 'us');
+       $query4
+           ->fields('us', array('uid','name'))
+           ->condition('us.uid',$value3->uid);
+       $result4 = $query4->execute();
+       $value4 = $result4->fetch();
+       
+       $rows = array();
+       $rows[NULL] = '-Any-';
+       //Assign user name to array with value and key for select list  
+       foreach ($result1 as $value1) {
+         if($value1->name != $value4->name){
+           $rows[$value1->name] = $value1->name;
+         }        
+       }
+       //Replace textbox exposed filter with select list
+       $form['uid'] = array(
+         '#type' => 'select',
+         '#options' => $rows,
+         '#default_value' => array('-Any-'),
+       );  
+  }
+}
+
+//Form render by timesheet_pm and report view to display checkbox
+function attach_view_form($form,&$form_state,$vars,$vars2) {
+  $node1 = node_load($vars);
+
+  //Check either timesheet_pm view accessed or report view
+  if($vars2 == "timesheet"){
+    //Checkbox display as checked or unchecked according to stored value
+    if(isset($node1->field_approvednot_approved['und'][0]['value'])){
+      if($node1->field_approvednot_approved['und'][0]['value'] == 'Approved'){
+        $default = 1;     
+      }
+      elseif ($node1->field_approvednot_approved['und'][0]['value'] == 'Not Approved') {
+        $default = 0;      
+      }
+    }
+    else {
+      $default = 0;      
+    }
+
+    //Display checkbox for every timesheet entry
+    $form = array();
+    $form['replace'] = array(
+     '#type' => 'checkbox',
+     '#default_value' => $default,
+     '#ajax' => array(
+       'callback' => 'checkbox_status_change',
+       ),
+     );
+      //Nid and value timesheet passed for further process
+      $form['node'] = array('#type' => 'hidden', '#value' => $vars);
+      $form['node2'] = array('#type' => 'hidden', '#value' => $vars2);
+      return $form;
+   }
+   elseif ($vars2 == "report") {   
+    //Checkbox display as checked or unchecked according to stored value
+    if(isset($node1->field_invoice['und'][0]['value'])){
+      if($node1->field_invoice['und'][0]['value'] == 'Invoice'){       
+        $default = 1;      
+      }
+      elseif ($node1->field_invoice['und'][0]['value'] == 'Not Invoice') {
+        $default = 0;
+      }
+    }
+    else {
+      $default = 0;      
+    } 
+    
+    //Display checkbox for only approved timesheet entry
+    $form = array();
+    $form['replace'] = array(
+     '#type' => 'checkbox',
+     '#default_value' => $default,
+     '#ajax' => array(
+       'callback' => 'checkbox_status_change',
+      ),
+     );
+      //Nid and value report passed for further process
+      $form['node'] = array('#type' => 'hidden', '#value' => $vars);
+      $form['node2'] = array('#type' => 'hidden', '#value' => $vars2);
+      return $form;
+    }
+}
+
+//Function call through ajax when timesheet_pm or report view checkbox clicked
+function checkbox_status_change($form,&$form_state){
+  $vars = node_load($form['node']['#value']);
+
+  //Check either timesheet_pm view accessed or report view
+  if($form['node2']['#value'] == 'timesheet'){    
+    if($form_state['values']['replace'] == '1'){     
+      $vars->field_approvednot_approved['und'][0]['value'] = 'Approved';
+      node_save($vars);     
+    }
+    elseif ($form_state['values']['replace'] == '0') { 
+      //Save timesheet entry with 'not invoice' after 'not approved'
+      if(isset($vars->field_invoice['und'][0]['value'])){
+        $vars->field_invoice['und'][0]['value'] = 'Not Invoice';
+      }
+      $vars->field_approvednot_approved['und'][0]['value'] = 'Not Approved';
+      node_save($vars); 
+    }  
+  } 
+  elseif ($form['node2']['#value'] == 'report') {
+     if($form_state['values']['replace'] == '1'){      
+      $vars->field_invoice['und'][0]['value'] = 'Invoice';
+      node_save($vars);
+    }
+    elseif ($form_state['values']['replace'] == '0') {  
+      $vars->field_invoice['und'][0]['value'] = 'Not Invoice';
+      node_save($vars);
+    }  
+  }
+  return;
+}
