@@ -11,21 +11,86 @@ function attach_form_form($form,&$form_state){
          ->condition('n.type','project_entry');
   $result1 = $query1->execute();
   
-  $options = array();
-  $options[NULL] = '-Any-';
+  $projects = array();
+  $projects[NULL] = '-Any-';
   foreach ($result1 as $value1) {
-    $options[$value1->title] = $value1->title;
+    $projects[$value1->title] = $value1->title;
   }
   
   $form['projects'] = array(
     '#type' => 'select',
     '#title' => 'Project Name',
-    '#options' => $options
+    '#options' => $projects
+  );
+  
+  $query2 = db_select('role', 'r');
+  $query2
+        ->fields('r', array('rid','name'))
+        ->condition('r.name','administrator');
+  $result2 = $query2->execute();
+  $value2 = $result2->fetch();
+       
+  $query3 = db_select('users_roles', 'ur');
+  $query3
+        ->fields('ur', array('uid','rid'))
+        ->condition('ur.rid',$value2->rid);
+  $result3 = $query3->execute();
+  $value3 = $result3->fetch();
+       
+  $query4 = db_select('users', 'us');
+  $query4
+        ->fields('us', array('uid','name'))
+        ->condition('us.uid',$value3->uid);
+  $result4 = $query4->execute();
+  $value4 = $result4->fetch();
+       
+  $query5 = db_select('users', 'u');
+  $query5->fields('u', array('name'));
+  $result5 = $query5->execute();
+       
+  $members = array();
+  $members[NULL] = '-Any-';
+  //Assign user name to array with value and key for select list  
+  foreach ($result5 as $value1) {
+    if($value1->name != $value4->name){
+      $members[$value1->name] = $value1->name;
+    }        
+  }
+  
+  $form['members'] = array(
+    '#type' => 'select',
+    '#title' => 'Members',
+    '#options' => $members
+  );
+  
+  $form['billable'] = array(
+    '#type' => 'select',
+    '#title' => 'Billable/Not Billable',
+    '#options' => array(NULL => '-Any-','Billable' => 'Billable','Not Billable' => 'Not Billable')
+  );
+  
+  $form['approval'] = array(
+    '#type' => 'select',
+    '#title' => 'Approved/Not Approved',
+    '#options' => array(NULL => '-Any-','Approved' => 'Approved','Not Approved' => 'Not Approved')
   );
   
   $form['issues'] = array(
+    '#id' => 'issuesfield',
     '#type' => 'textfield',
     '#title' => 'Issue Number'
+  );
+  
+  $form['start'] = array(
+    '#id' => 'startfield',
+    '#type' => 'textfield',
+    '#title' => 'Start Date'
+  );
+    
+  $form['end'] = array(
+    '#id' => 'endfield',
+    '#type' => 'textfield',
+    '#title' => 'End Date'
   );
   
   $form['apply'] = array(
@@ -34,6 +99,8 @@ function attach_form_form($form,&$form_state){
   );
   
   $form['#submit'][] = 'submit_invoice';
+  
+  drupal_add_css(drupal_get_path('module', 'attach_view').'/attach_view.css');
   
   return $form;
 }
