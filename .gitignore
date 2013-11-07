@@ -29,9 +29,11 @@ index.php
 install.php
 update.php
 xmlrpc.php
+nbproject
 /includes
 /misc
 /modules
 /profiles
 /scripts
 /themes
+/nbproject/private/
