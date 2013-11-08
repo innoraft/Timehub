@@ -20,6 +20,7 @@ function attach_form_form($form,&$form_state){
   $form['projects'] = array(
     '#type' => 'select',
     '#title' => 'Project Name',
+    '#multiple' => TRUE,
     '#options' => $projects
   );
   
@@ -60,6 +61,7 @@ function attach_form_form($form,&$form_state){
   $form['members'] = array(
     '#type' => 'select',
     '#title' => 'Members',
+    '#multiple' => TRUE,
     '#options' => $members
   );
   
@@ -67,12 +69,6 @@ function attach_form_form($form,&$form_state){
     '#type' => 'select',
     '#title' => 'Billable/Not Billable',
     '#options' => array(NULL => '-Any-','Billable' => 'Billable','Not Billable' => 'Not Billable')
-  );
-  
-  $form['approval'] = array(
-    '#type' => 'select',
-    '#title' => 'Approved/Not Approved',
-    '#options' => array(NULL => '-Any-','Approved' => 'Approved','Not Approved' => 'Not Approved')
   );
   
   $form['issues'] = array(
@@ -84,13 +80,15 @@ function attach_form_form($form,&$form_state){
   $form['start'] = array(
     '#id' => 'startfield',
     '#type' => 'textfield',
-    '#title' => 'Start Date'
+    '#title' => 'Start Date',
+    '#description' => 'E.g.,Y-m-d'
   );
     
   $form['end'] = array(
     '#id' => 'endfield',
     '#type' => 'textfield',
-    '#title' => 'End Date'
+    '#title' => 'End Date',
+    '#description' => 'E.g.,Y-m-d'
   );
   
   $form['apply'] = array(
