@@ -1,4 +1,5 @@
 <?php
+drupal_add_css(drupal_get_path('module', 'attach_view').'/attach_view.css');
 
 //Display 'create invoice page'
 function attach_form_form($form,&$form_state){
@@ -81,14 +82,14 @@ function attach_form_form($form,&$form_state){
     '#id' => 'startfield',
     '#type' => 'textfield',
     '#title' => 'Start Date',
-    '#description' => 'E.g.,Y-m-d'
+    '#description' => 'Format: Y-m-d'
   );
     
   $form['end'] = array(
     '#id' => 'endfield',
     '#type' => 'textfield',
     '#title' => 'End Date',
-    '#description' => 'E.g.,Y-m-d'
+    '#description' => 'Format: Y-m-d'
   );
   
   $form['apply'] = array(
@@ -97,8 +98,6 @@ function attach_form_form($form,&$form_state){
   );
   
   $form['#submit'][] = 'submit_invoice';
-  
-  drupal_add_css(drupal_get_path('module', 'attach_view').'/attach_view.css');
   
   return $form;
 }

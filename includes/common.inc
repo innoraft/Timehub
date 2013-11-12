@@ -7380,7 +7380,6 @@ function watchdog_severity_levels() {
 function drupal_explode_tags($tags) {
   // This regexp allows the following types of user input:
   // this, "somecompany, llc", "and ""this"" w,o.rks", foo bar
-  dpm($tags);
   if(is_array($tags)) $tags = "default";
   $regexp = '%(?:^|,\ *)("(?>[^"]*)(?>""[^"]* )*"|(?: [^",]*))%x';
   preg_match_all($regexp, $tags, $matches);
