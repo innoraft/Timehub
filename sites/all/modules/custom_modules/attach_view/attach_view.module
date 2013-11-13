@@ -175,6 +175,16 @@ function attach_view_node_access($node, $op, $account){
         }
       }
     }
+    if(in_array('Project Manager', $user->roles)){
+      if(isset($node->field_invoice['und'][0]['value'])){
+        if($node->field_invoice['und'][0]['value'] == 'Invoice'){
+          return NODE_ACCESS_DENY;
+        }
+        else {
+          return NODE_ACCESS_ALLOW;
+        }
+      }
+    }
 }
 
 //After submit 'timesheet_entry', view display based on current user. 
@@ -183,7 +193,7 @@ function attach_view_node_insert($node) {
   global $base_url;
   if($node->type == 'timesheet_entry') {
     if(in_array('Developer', $user->roles)){
-      drupal_goto($base_url."/timesheet");
+      drupal_goto($base_url."/timesheet-dev");
     }
     elseif (in_array('Project Manager', $user->roles)) {
       drupal_goto($base_url."/timesheet-pm");
@@ -422,7 +432,9 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
   //Admin name not mentioned at 'member exposed filter' of 'report view'
   if($form_id == 'views_exposed_form'){
     $query1 = db_select('users', 'u');
-    $query1->fields('u', array('name'));
+    $query1 
+          ->fields('u', array('uid','name'))
+          ->join('users_roles', 'ur', 'u.uid = ur.uid'); 
     $result1 = $query1->execute();
     
     $query2 = db_select('role', 'r');
@@ -454,6 +466,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
       $rows[$value1->name] = $value1->name;
     }        
    }
+ 
    //Replace textbox exposed filter with select list
    $form['uid'] = array(
     '#type' => 'select',

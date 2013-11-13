@@ -47,18 +47,21 @@ function attach_form_form($form,&$form_state){
   $value4 = $result4->fetch();
        
   $query5 = db_select('users', 'u');
-  $query5->fields('u', array('name'));
+  $query5
+        ->fields('u', array('uid','name'))
+        ->join('users_roles', 'ur', 'u.uid = ur.uid'); 
   $result5 = $query5->execute();
        
   $members = array();
   $members[NULL] = '-Any-';
+  //dpm($members);
   //Assign user name to array with value and key for select list  
   foreach ($result5 as $value1) {
     if($value1->name != $value4->name){
       $members[$value1->name] = $value1->name;
     }        
   }
-  
+
   $form['members'] = array(
     '#type' => 'select',
     '#title' => 'Members',
