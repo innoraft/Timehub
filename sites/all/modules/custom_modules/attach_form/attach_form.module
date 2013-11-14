@@ -1,4 +1,5 @@
 <?php
+drupal_add_css(drupal_get_path('module', 'attach_view').'/attach_view.css');
 
 //Display 'create invoice page'
 function attach_form_form($form,&$form_state){
@@ -20,6 +21,7 @@ function attach_form_form($form,&$form_state){
   $form['projects'] = array(
     '#type' => 'select',
     '#title' => 'Project Name',
+    '#multiple' => TRUE,
     '#options' => $projects
   );
   
@@ -45,21 +47,25 @@ function attach_form_form($form,&$form_state){
   $value4 = $result4->fetch();
        
   $query5 = db_select('users', 'u');
-  $query5->fields('u', array('name'));
+  $query5
+        ->fields('u', array('uid','name'))
+        ->join('users_roles', 'ur', 'u.uid = ur.uid'); 
   $result5 = $query5->execute();
        
   $members = array();
   $members[NULL] = '-Any-';
+
   //Assign user name to array with value and key for select list  
   foreach ($result5 as $value1) {
     if($value1->name != $value4->name){
       $members[$value1->name] = $value1->name;
     }        
   }
-  
+
   $form['members'] = array(
     '#type' => 'select',
     '#title' => 'Members',
+    '#multiple' => TRUE,
     '#options' => $members
   );
   
@@ -67,12 +73,6 @@ function attach_form_form($form,&$form_state){
     '#type' => 'select',
     '#title' => 'Billable/Not Billable',
     '#options' => array(NULL => '-Any-','Billable' => 'Billable','Not Billable' => 'Not Billable')
-  );
-  
-  $form['approval'] = array(
-    '#type' => 'select',
-    '#title' => 'Approved/Not Approved',
-    '#options' => array(NULL => '-Any-','Approved' => 'Approved','Not Approved' => 'Not Approved')
   );
   
   $form['issues'] = array(
@@ -84,13 +84,15 @@ function attach_form_form($form,&$form_state){
   $form['start'] = array(
     '#id' => 'startfield',
     '#type' => 'textfield',
-    '#title' => 'Start Date'
+    '#title' => 'Start Date',
+    '#description' => 'Format: Y-m-d'
   );
     
   $form['end'] = array(
     '#id' => 'endfield',
     '#type' => 'textfield',
-    '#title' => 'End Date'
+    '#title' => 'End Date',
+    '#description' => 'Format: Y-m-d'
   );
   
   $form['apply'] = array(
@@ -99,8 +101,6 @@ function attach_form_form($form,&$form_state){
   );
   
   $form['#submit'][] = 'submit_invoice';
-  
-  drupal_add_css(drupal_get_path('module', 'attach_view').'/attach_view.css');
   
   return $form;
 }
