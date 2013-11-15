@@ -3,6 +3,7 @@
 function attach_view_menu(){
   $items = array();  
   
+  //page argument passed from 'create invoice page' after click submit
   $items['invoice'] = array(
     'page callback' => 'invoice',
     'page argument' => array(1),
@@ -25,6 +26,7 @@ function attach_view_menu(){
     'type' => MENU_NORMAL_ITEM
   ); 
   
+  //page argument passed from 'create invoice page' after click member name
   $items['desc'] = array(
     'page callback' => 'description',
     'page argument' => array(1),
@@ -35,25 +37,25 @@ function attach_view_menu(){
   return $items;
 }
 
-//'invoice report page' will not access by developer
+//'invoice report page' will access by Project Manager and Administrator
 function  invoice_report_access(){
   global $user;
-  if(in_array('Developer', $user->roles)){
-    return FALSE;
+  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)){
+    return TRUE;
   }
   else {
-    return TRUE;
+    return FALSE;
   }
 }
 
-//'create invoice page' will not access by developer
+//'create invoice page' will access by Project Manager and Administrator
 function  create_invoice_access(){
   global $user;
-  if(in_array('Developer', $user->roles)){
-    return FALSE;
+  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)){
+    return TRUE;
   }
   else {
-    return TRUE;
+    return FALSE;
   }
 }
 
@@ -162,9 +164,9 @@ function secToHM($sec){
   return "$hour:$min";
 }
 
-//Developer not able to edit 'timesheet_entry' which approved by project manager. 
 function attach_view_node_access($node, $op, $account){
   global $user;
+    //Developer not able to edit 'timesheet_entry' which approved 
     if(in_array('Developer', $user->roles)){
       if(isset($node->field_approvednot_approved['und'][0]['value'])){
         if($node->field_approvednot_approved['und'][0]['value'] == 'Approved'){
@@ -175,6 +177,7 @@ function attach_view_node_access($node, $op, $account){
         }
       }
     }
+    //Project Manager not able to edit 'timesheet_entry' which invoiced 
     if(in_array('Project Manager', $user->roles)){
       if(isset($node->field_invoice['und'][0]['value'])){
         if($node->field_invoice['und'][0]['value'] == 'Invoice'){
@@ -207,7 +210,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
   
   //Alter 'create invoice page' to display timesheet entry 
   if($form_id == 'attach_form_form'){
-    if (in_array("Project Manager",$user->roles)) {
+    if (in_array("Project Manager",$user->roles) || in_array("administrator",$user->roles)) {
       $header = array('project Nmae','Issue Number','work Hour','Member','Date');
       $rows = array();
      
@@ -280,7 +283,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
         }
       }     
  
-      //Check either start and end date given to 'text field' or not
+      //Check either Start and End date given to 'text field' or not
       $start = NULL;
       $end = NULL;
       if(isset($form_state['values']['start'])){
@@ -291,7 +294,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
         }
       }    
       
-      //Select node nids according to project name,start & end date,billable/not billable,member and issue number
+      //Select node nids according to project name,Start & End date,billable/not billable,member and issue number
       $query = new EntityFieldQuery;
       $query->entityCondition('entity_type', 'node')
             ->entityCondition('bundle', 'timesheet_entry');       
@@ -429,7 +432,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
     }
   }
   
-  //Admin name not mentioned at 'member exposed filter' of 'report view'
+  //Admin name will not mentioned at 'member exposed filter' of 'search view'
   if($form_id == 'views_exposed_form'){
     $query1 = db_select('users', 'u');
     $query1 
@@ -481,65 +484,58 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
   }
 }
 
-//Form render by timesheet_pm to display checkbox
-function attach_view_form($form,&$form_state,$vars,$vars2) {
+//Form render by Project Manager 'timesheet view' to display checkbox
+function attach_view_form($form,&$form_state,$vars) {
   $node1 = node_load($vars);
 
-  //Check either timesheet_pm view accessed or not
-  if($vars2 == "timesheet"){
-    //Checkbox display as checked or unchecked according to stored value
-    if(isset($node1->field_approvednot_approved['und'][0]['value'])){
-      if($node1->field_approvednot_approved['und'][0]['value'] == 'Approved'){
-        $default = 1;     
-      }
-      elseif ($node1->field_approvednot_approved['und'][0]['value'] == 'Not Approved') {
-        $default = 0;      
-      }
+  //Checkbox display as checked or unchecked according to stored value
+  if(isset($node1->field_approvednot_approved['und'][0]['value'])){
+    if($node1->field_approvednot_approved['und'][0]['value'] == 'Approved'){
+      $default = 1;     
     }
-    else {
+    elseif ($node1->field_approvednot_approved['und'][0]['value'] == 'Not Approved') {
       $default = 0;      
     }
+  }
+  else {
+    $default = 0;      
+  }
     
-    //Check timesheet entry invoiced or not 
-    $invoice = NULL;
-    if(isset($node1->field_invoice['und'][0]['value'])){
-      if($node1->field_invoice['und'][0]['value'] == 'Invoice'){
-        $invoice = 1;
-      }
+  //Check timesheet entry invoiced or not 
+  $invoice = NULL;
+  if(isset($node1->field_invoice['und'][0]['value'])){
+    if($node1->field_invoice['und'][0]['value'] == 'Invoice'){
+      $invoice = 1;
     }
+  }
     
-    //Display checkbox for every timesheet entry
-    $form = array();
-    $form['replace'] = array(
-     '#type' => 'checkbox',
-     '#default_value' => $default,
-     //Disable checkbox if timesheet entry invoiced
-     '#disabled' => $invoice != NULL ? TRUE : FALSE,
-     '#ajax' => array(
-       'callback' => 'checkbox_status_change',
-       ),
-     );
-     //Nid and value timesheet passed for further process
-     $form['node'] = array('#type' => 'hidden', '#value' => $vars);
-     $form['node2'] = array('#type' => 'hidden', '#value' => $vars2);
-     return $form;
-   }
+  //Display checkbox for timesheet entry
+  $form = array();
+  $form['replace'] = array(
+   '#type' => 'checkbox',
+   '#default_value' => $default,
+   //Disable checkbox if timesheet entry invoiced
+   '#disabled' => $invoice != NULL ? TRUE : FALSE,
+   '#ajax' => array(
+     'callback' => 'checkbox_status_change',
+     ),
+   );
+   //'Nid' passed for further process
+   $form['node'] = array('#type' => 'hidden', '#value' => $vars);
+   return $form;
 }
 
-//Function call through ajax when timesheet_pm or report view checkbox clicked
+//Function call through ajax when Project Manager 'timesheet view' checkbox clicked
 function checkbox_status_change($form,&$form_state){
   $vars = node_load($form['node']['#value']);
-
-  //Check either timesheet_pm view accessed or not
-  if($form['node2']['#value'] == 'timesheet'){    
-    if($form_state['values']['replace'] == '1'){     
-      $vars->field_approvednot_approved['und'][0]['value'] = 'Approved';
-      node_save($vars);     
-    }
-    elseif ($form_state['values']['replace'] == '0') { 
-      $vars->field_approvednot_approved['und'][0]['value'] = 'Not Approved';
-      node_save($vars); 
-    }  
-  } 
+  
+  if($form_state['values']['replace'] == '1'){     
+    $vars->field_approvednot_approved['und'][0]['value'] = 'Approved';
+    node_save($vars);     
+  }
+  elseif ($form_state['values']['replace'] == '0') { 
+    $vars->field_approvednot_approved['und'][0]['value'] = 'Not Approved';
+    node_save($vars); 
+  }  
   return;
 }
