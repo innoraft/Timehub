@@ -25,6 +25,7 @@ function attach_form_form($form,&$form_state){
     '#options' => $projects
   );
   
+  //Admin name will not mentioned at 'member select list'
   $query2 = db_select('role', 'r');
   $query2
         ->fields('r', array('rid','name'))
