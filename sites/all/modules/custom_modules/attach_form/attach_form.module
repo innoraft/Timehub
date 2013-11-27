@@ -1,120 +1,175 @@
 <?php
+// G-comment : @file block is missing.
 drupal_add_css(drupal_get_path('module', 'attach_view').'/attach_view.css');
-
+// G-comment : there shoud be spaces before and after the dot.
 //Display 'create invoice page'
+// G-comment : WCS for single line comments.
 function attach_form_form($form,&$form_state){
+  // G-comment : There should be a blank space after the comma ($form, &$form_state).
+  // G-comment : There should be a blank space b/W close parenthesis and open bracket '){'.
+  // G-comment : Comment Docblock missing before the function.
   $form = array();
-  
+
   //Select project name
+  // G-comment : WCS for single line comments.
   $query1 = db_select('node', 'n');
   $query1
          ->fields('n', array('type','title'))
          ->condition('n.type','project_entry');
+
+  // G-comment : Indentation is not correct.
+  // G-comment : There should be a blank space after the comma. ('type', 'title')
+  // G-comment : There should be a blank space after the comma. ('n.type', 'project_entry')
   $result1 = $query1->execute();
-  
+
   $projects = array();
   $projects[NULL] = '-Any-';
+
+  /**
+   * G-comment : Here a check on $result1 should be made to check wheather
+   * it has some value or not.
+   *
+   * G-comment : after executing the query we should fetch the data from
+   * result using function fetchAssoc or etc.
+   */
   foreach ($result1 as $value1) {
+    /**
+     * G-comment : instead of making title key, some unique key should be used
+     * so that it can not overrite two nodes having same title, use nid instead.
+     */
     $projects[$value1->title] = $value1->title;
   }
-  
+
   $form['projects'] = array(
     '#type' => 'select',
     '#title' => 'Project Name',
+    // G-comment : #title should be use with a t() function, e.g. t('ABC').
     '#multiple' => TRUE,
     '#options' => $projects
   );
-  
+
   //Admin name will not mentioned at 'member select list'
+  // G-comment : WCS for single line comments.
+  /**
+   * G-comment : very weird logic for finding users of role administrator.
+   * as i understood from code and requirement, members is list of users with
+   * role developer and project manager.
+   */
   $query2 = db_select('role', 'r');
   $query2
         ->fields('r', array('rid','name'))
         ->condition('r.name','administrator');
+    // G-comment : Indentation is not correct.
+    // G-comment : There should be a blank space after the comma. ('rid', 'name')
+    // G-comment : There should be a blank space after the comma. ('r.name','administrator')
+    // G-comment : For getting the role id use user_roles() instead of query.
   $result2 = $query2->execute();
   $value2 = $result2->fetch();
-       
+
   $query3 = db_select('users_roles', 'ur');
   $query3
         ->fields('ur', array('uid','rid'))
         ->condition('ur.rid',$value2->rid);
+    // G-comment : Indentation is not correct.
+    // G-comment : There should be a blank space after the comma. ('uid', 'rid').
+    // G-comment : There should be a blank space after the comma. ('ur.rid',$value2->rid).
   $result3 = $query3->execute();
   $value3 = $result3->fetch();
-       
+
   $query4 = db_select('users', 'us');
   $query4
         ->fields('us', array('uid','name'))
         ->condition('us.uid',$value3->uid);
+    // G-comment : Indentation is not correct.
+    // G-comment : There should be a blank space after the comma. ('uid', 'name')
+    // G-comment : There should be a blank space after the comma. ('us.uid',$value3->uid)
   $result4 = $query4->execute();
   $value4 = $result4->fetch();
-       
+
   $query5 = db_select('users', 'u');
   $query5
         ->fields('u', array('uid','name'))
-        ->join('users_roles', 'ur', 'u.uid = ur.uid'); 
+        ->join('users_roles', 'ur', 'u.uid = ur.uid');
+    // G-comment : Indentation is not correct.
+    // G-comment : There should be a blank space after the comma. ('uid', 'name')
   $result5 = $query5->execute();
-       
+
   $members = array();
   $members[NULL] = '-Any-';
 
-  //Assign user name to array with value and key for select list  
+  //Assign user name to array with value and key for select list.
+  // G-comment : there should be a space before starting the comment, and.
+  // End with a '.'.
   foreach ($result5 as $value1) {
     if($value1->name != $value4->name){
+      // G-comment : Space after closing and opening parenthysis
       $members[$value1->name] = $value1->name;
-    }        
+    }
   }
 
   $form['members'] = array(
     '#type' => 'select',
     '#title' => 'Members',
+    // G-comment : #title should be use with a t() function, e.g. t('ABC').
     '#multiple' => TRUE,
     '#options' => $members
   );
-  
+
   $form['billable'] = array(
     '#type' => 'select',
     '#title' => 'Billable/Not Billable',
+    // G-comment : #title should be use with a t() function, e.g. t('ABC').
     '#options' => array(NULL => '-Any-','Billable' => 'Billable','Not Billable' => 'Not Billable')
   );
-  
+  // G-comment : WCS, There should be a space after comma.
+
   $form['issues'] = array(
     '#id' => 'issuesfield',
     '#type' => 'textfield',
     '#title' => 'Issue Number'
+    // G-comment : #title should be use with a t() function, e.g. t('ABC').
   );
-  
+
   $form['start'] = array(
     '#id' => 'startfield',
     '#type' => 'textfield',
     '#title' => 'Start Date',
+    // G-comment : #title should be use with a t() function, e.g. t('ABC').
     '#description' => 'Format: Y-m-d'
   );
-    
+
   $form['end'] = array(
     '#id' => 'endfield',
     '#type' => 'textfield',
     '#title' => 'End Date',
+    // G-comment : #title should be use with a t() function, e.g. t('ABC').
     '#description' => 'Format: Y-m-d'
   );
-  
+
   $form['apply'] = array(
     '#type' => 'button',
     '#value' => 'Apply'
+    // G-comment : #value should be use with a t() function, e.g. t('ABC').
   );
-  
+
   $form['#submit'][] = 'submit_invoice';
-  
+
   return $form;
 }
 
-//Move to 'invoice page' with nids whom checkbox select 
+//Move to 'invoice page' with nids whom checkbox select
+// G-comment : Comment Doc Block missing.
 function submit_invoice($form,&$form_state){
+  // G-comment : space after comma missing.
   $nids = array();
   global $base_url;
-  
+
   $keys = array_keys($form_state['values']['data']);
   $nodes = node_load_multiple($keys);
   foreach ($nodes as $node) {
     //Save invoice and assign key(nid) whose value not equal to zero
+    // G-comment : WCS of comment.
+    // G-comment : didnot get the logic here.
     if($form_state['values']['data'][$node->nid] != 0){
       $nids[] = $node->nid;
       $node->field_invoice['und'][0]['value'] = 'Invoice';
@@ -122,5 +177,7 @@ function submit_invoice($form,&$form_state){
     }
   }
   $nid = implode(',', $nids);
+  // G-comment : no need to user $base_url.
   drupal_goto($base_url."/invoice/".$nid);
+  // G-comment : WCS, space before & after . operator missing.
 }
