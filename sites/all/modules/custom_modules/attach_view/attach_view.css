@@ -41,3 +41,6 @@
   float: right;
 }
 
+.views-exposed-widget.views-widget-filter-field_invoice_value{
+  float: none;
+}
