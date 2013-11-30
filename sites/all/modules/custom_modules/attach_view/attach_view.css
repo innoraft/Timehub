@@ -6,47 +6,38 @@
         Purpose of the stylesheet follows.
 */
 
-.form-item.form-type-select{
-    display: inline-block;
-    width: 24%;
+.page-create-invoice .form-select{
+  width: 120px;
 }
 
-.form-item.form-type-select.form-item-projects{
-    width: 18%;
-}
-
-.form-item.form-type-select.form-item-members{
-    width: 18%;
+.page-create-invoice .form-item.form-type-select{
+  display: inline-table;
+  width: 150px;
 }
 
 .form-item.form-type-textfield.form-item-issues{
-    display: inline-block;
-    width: 100%;
+  display: block;
+}
+
+.form-text{
+  width: 150px;
 }
 
 .form-item.form-type-textfield.form-item-start{
-    display: inline-block;
-    width: 30%;
-}
-
-#edit-apply{
-    display: block;
+  display: inline-block;
+  width: 200px;
 }
 
 .form-item.form-type-textfield.form-item-end{
-    display: inline-block;
-    width: 30%;
-    clear: right;
+  display: inline-block;
+  width: 200px;
 }
 
-#issuesfield{
-    width: 20%;
-}
-
-#startfield,#endfield{
-    width: 67%;
+#edit-apply{
+  display: block;
 }
 
 #time{
-    float: right;
+  float: right;
 }
+

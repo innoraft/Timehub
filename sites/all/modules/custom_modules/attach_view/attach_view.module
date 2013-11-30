@@ -1,175 +1,19 @@
 <?php
 
-function attach_view_menu(){
-  $items = array();  
-  
-  //page argument passed from 'create invoice page' after click submit
-  $items['invoice'] = array(
-    'page callback' => 'invoice',
-    'page argument' => array(1),
-    'access callback' => TRUE,
-    'type' => MENU_NORMAL_ITEM
-  ); 
-  
-  $items['invoice_report'] = array(
-    'title' => 'Invoice Report',
-    'page callback' => 'invoice_report',
-    'access callback' => 'invoice_report_access',
-    'type' => MENU_NORMAL_ITEM
-  ); 
-  
-  $items['create_invoice'] = array(
-    'title' => 'Create Invoice',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('attach_form_form'),
-    'access callback' => 'create_invoice_access',
-    'type' => MENU_NORMAL_ITEM
-  ); 
-  
-  //page argument passed from 'create invoice page' after click member name
-  $items['desc'] = array(
-    'page callback' => 'description',
-    'page argument' => array(1),
-    'access callback' => TRUE,
-    'type' => MENU_NORMAL_ITEM
-  ); 
-  
-  return $items;
-}
+/**
+ * @file attach_view.module file.
+ */
 
-//'invoice report page' will access by Project Manager and Administrator
-function  invoice_report_access(){
+/**
+ * @desc implements hook_node_access().
+ * @return constant.
+ */
+function attach_view_node_access($node, $op, $account) {
   global $user;
-  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)){
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
-}
-
-//'create invoice page' will access by Project Manager and Administrator
-function  create_invoice_access(){
-  global $user;
-  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)){
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
-}
-
-//Display description of timesheet entry
-function description($values = ''){
-  $node = node_load($values);
-  if(!isset($node->body['und'][0]['value'])){
-    $description = '';
-  }
-  else {
-    $description = $node->body['und'][0]['value'];
-  }
-  return $description;
-}
-
-//Display timesheet entry at 'invoice page' according to 'invoice' checked at 'create invoice page'
-function  invoice($values = ''){ 
-  //Display current date and time at 'invoice page'
-  $dt = new DateTime();
-  $date = $dt->format('n.j.Y');
-  $time = $dt->format('H:i');
-  $datetime = '<span>Date: '.$date.'</span><span id = "time">Time: '.$time.'</span>';
-  
-  $header = array('project Nmae','Issue Number','work Hour');
-  $rows = array();
-  
-  $nids = explode(',',$values);
-  $nodes1 = node_load_multiple($nids);
-  
-  //Select distinct project name with related nids for further use
-  $arr = array();
-  foreach ($nodes1 as $node1) {
-    $project_name = node_load($node1->field_project_name['und'][0]['target_id']);
-    $arr[$project_name->title][] = $node1->nid;
-  }
-  
-  //Display timesheet entry according to group by project name
-  foreach ($arr as $ar) {
-    $total = 0;
-    $nodes2 = node_load_multiple($ar);
-    foreach ($nodes2 as $node2) {  
-      $project_name = node_load($node2->field_project_name['und'][0]['target_id']);
-      $rows[] = array($project_name->title,$node2->field_issue_number['und'][0]['value'],secToHM($node2->field_work_hour['und'][0]['value']));
-      $total += $node2->field_work_hour['und'][0]['value'];
-    }
-    $rows[] = array('','',"Total = ".secToHM($total));
-  }
-  return $datetime.theme('table', array('header' => $header, 'rows' => $rows));
-}
-
-//Display timesheet entry at 'invoice report page' according to invoice created till yet
-function invoice_report(){
-  //Display current date and time at 'invoice page'
-  $dt = new DateTime();
-  $date = $dt->format('n.j.Y');
-  $time = $dt->format('H:i');
-  $datetime = '<span>Date: '.$date.'</span><span id = "time">Time: '.$time.'</span>';
-  
-  $header = array('project Nmae','Issue Number','work Hour');
-  $rows = array();
-  
-  //Select distinct project name target id for further use
-  $query1 = db_select('field_data_field_project_name', 'pn');
-  $query1->fields('pn', array('field_project_name_target_id'))
-         ->distinct();
-  $result1 = $query1->execute();
-  
-  //Display timesheet entry according to group by project name
-  foreach ($result1 as $value1) {
-    $query = new EntityFieldQuery;
-    $query->entityCondition('entity_type', 'node')
-    ->entityCondition('bundle', 'timesheet_entry')
-    ->fieldCondition('field_project_name', 'target_id', $value1->field_project_name_target_id)
-    ->fieldCondition('field_invoice', 'value', 'Invoice');
-    $results = $query->execute();
-
-    $total = 0;
-    if (!empty($results['node'])) {
-      $nids = array_keys($results['node']);
-      $nodes = node_load_multiple($nids);
-
-      foreach ($nodes as $node) {
-        $project_name = node_load($node->field_project_name['und'][0]['target_id']);
-        $rows[] = array($project_name->title,$node->field_issue_number['und'][0]['value'],secToHM($node->field_work_hour['und'][0]['value']));
-        $total += $node->field_work_hour['und'][0]['value'];
-      }
-      $rows[] = array('','',"Total = ".secToHM($total));
-    }
-  }
-  
-  return $datetime.theme('table', array('header' => $header, 'rows' => $rows));
-}
-
-//Display hour and minute as two digit 
-function ensure2Digit($number) {
-    if($number < 10) {
-        $number = '0' . $number;
-    }
-    return $number;
-}
-
-//Convert second to hour:minute format
-function secToHM($sec){
-  $hour = ensure2Digit(floor($sec/3600));
-  $min = ensure2Digit(floor(($sec%3600)/60));
-  return "$hour:$min";
-}
-
-function attach_view_node_access($node, $op, $account){
-  global $user;
-    //Developer not able to edit 'timesheet_entry' which approved 
-    if(in_array('Developer', $user->roles)){
-      if(isset($node->field_approvednot_approved['und'][0]['value'])){
-        if($node->field_approvednot_approved['und'][0]['value'] == 'Approved'){
+    // Developer not able to edit 'timesheet_entry' which approved.
+    if(in_array('Developer', $user->roles)) {
+      if(isset($node->field_approvednot_approved['und'][0]['value'])) {
+        if($node->field_approvednot_approved['und'][0]['value'] == 'Approved') {
           return NODE_ACCESS_DENY;
         }
         else {
@@ -177,10 +21,10 @@ function attach_view_node_access($node, $op, $account){
         }
       }
     }
-    //Project Manager not able to edit 'timesheet_entry' which invoiced 
-    if(in_array('Project Manager', $user->roles)){
-      if(isset($node->field_invoice['und'][0]['value'])){
-        if($node->field_invoice['und'][0]['value'] == 'Invoice'){
+    // Project Manager not able to edit 'timesheet_entry' which invoiced.
+    if(in_array('Project Manager', $user->roles)) {
+      if(isset($node->field_invoice['und'][0]['value'])) {
+        if($node->field_invoice['und'][0]['value'] == 'Invoice') {
           return NODE_ACCESS_DENY;
         }
         else {
@@ -190,188 +34,44 @@ function attach_view_node_access($node, $op, $account){
     }
 }
 
-//After submit 'timesheet_entry', view display based on current user. 
+/**
+ * @desc After submit 'timesheet_entry', view display based on current user.
+ * @param $node.
+ */
 function attach_view_node_insert($node) {
   global $user;
   global $base_url;
   if($node->type == 'timesheet_entry') {
-    if(in_array('Developer', $user->roles)){
-      drupal_goto($base_url."/timesheet-dev");
+    if(in_array('Developer', $user->roles)) {
+      drupal_goto($base_url . "/timesheet-dev");
     }
     elseif (in_array('Project Manager', $user->roles)) {
-      drupal_goto($base_url."/timesheet-pm");
+      drupal_goto($base_url . "/timesheet-pm");
     }
   }
 }
 
-function  attach_view_form_alter(&$form,&$form_state,$form_id){
+/**
+ * @desc implements hook_form_alter().
+ * @param $form.
+ * @param $form_state.
+ * @param $form_id.
+ * @return.
+ */
+function  attach_view_form_alter(&$form,&$form_state,$form_id) {
   global $user; 
-  global $base_url;
   
-  //Alter 'create invoice page' to display timesheet entry 
-  if($form_id == 'attach_form_form'){
-    if (in_array("Project Manager",$user->roles) || in_array("administrator",$user->roles)) {
-      $header = array('project Nmae','Issue Number','work Hour','Member','Date');
-      $rows = array();
-     
-      //Check either project name select with 'select list' or not 
-      $flag1 =0;
-      $project = NULL;
-      if(isset($form_state['values']['projects'])){
-        foreach ($form_state['values']['projects'] as $value1) {
-          if($value1 != NULL){
-            $flag1 = 1;
-          }
-        }
-      }
-      if($flag1 == 1){
-        $project = array_keys($form_state['values']['projects']);
-      }
- 
-      //Get nid of selected project name for futher use
-      $query1 = db_select('node', 'n');
-      $query1
-            ->fields('n', array('nid','title'));
-             if($project != NULL){
-               $query1->condition('n.title',$project);
-             }
-      $result1 = $query1->execute();
-      $values1 = $result1->fetchAll();
-      foreach ($values1 as $value) {
-        $projects[] = $value->nid;
-      }
-      
-      //Check either Billable/Not Billable select with 'select list' or not 
-      $billable = NULL;
-      if(isset($form_state['values']['billable'])){
-        $billable = $form_state['values']['billable'];
-      } 
-      
-      //Check either member select with 'select list' or not 
-      $flag2 =0;
-      $member = NULL;
-      if(isset($form_state['values']['members'])){
-        foreach ($form_state['values']['members'] as $value2) {
-          if($value2 != NULL){
-            $flag2 = 1;
-          }
-        }
-      }
-      if($flag2 == 1){
-        $member = array_keys($form_state['values']['members']);
-      }
-      
-      //Get uid of selected member for futher use
-      $query2 = db_select('users', 'u');
-      $query2
-            ->fields('u', array('uid','name'));
-             if($member != NULL){
-               $query2->condition('u.name',$member);
-             }
-      $result2 = $query2->execute();
-      $values2 = $result2->fetchAll();
-      foreach ($values2 as $value) {
-        $members[] = $value->uid;
-      }
-      
-      //Check either issue number given to 'text field' or not
-      $issues = NULL;
-      if(isset($form_state['values']['issues'])){
-        if($form_state['values']['issues'] != NULL){
-          $str = $form_state['values']['issues'];
-          $issues = explode(',',$str);
-        }
-      }     
- 
-      //Check either Start and End date given to 'text field' or not
-      $start = NULL;
-      $end = NULL;
-      if(isset($form_state['values']['start'])){
-        if(isset($form_state['values']['end'])){
-          $start = strtotime($form_state['values']['start']);
-          $end = strtotime($form_state['values']['end']);
-          $startend = array('start' => $start, 'end' => $end);
-        }
-      }    
-      
-      //Select node nids according to project name,Start & End date,billable/not billable,member and issue number
-      $query = new EntityFieldQuery;
-      $query->entityCondition('entity_type', 'node')
-            ->entityCondition('bundle', 'timesheet_entry');       
-      if($member != NULL){
-        $query->propertyCondition('uid', $members);
-      }  
-      $query->fieldCondition('field_invoice', 'value', 'Not Invoice');
-      $query->fieldCondition('field_approvednot_approved', 'value', 'Approved');
-      if($issues != NULL){
-        $query->fieldCondition('field_issue_number', 'value', $issues);
-      }       
-      if($billable != NULL){
-        $query->fieldCondition('field_billablenot_billable', 'value', $billable);
-      } 
-      if($project != NULL){
-        $query->fieldCondition('field_project_name', 'target_id', $projects);
-      } 
-      if($start != NULL && $end != NULL){
-        //Check either Start Date less than End Date or not
-        if($end-$start > 0){
-          $query->fieldCondition('field_date', 'value', array($startend['start'], $startend['end']), 'BETWEEN');
-        }
-        else {
-          drupal_set_message('Start Date must be less than End Date');
-          $form_state['input']['start'] = NULL;
-          $form_state['input']['end'] = NULL;
-          return;
-        } 
-      }  
-      elseif ($start == NULL && $end != NULL) {
-        $query->fieldCondition('field_date', 'value', $end, '<=');
-      }
-      elseif ($start != NULL && $end == NULL) {
-        $query->fieldCondition('field_date', 'value', $start, '>=');
-      }
-      $results = $query->execute();
-
-      if (!empty($results['node'])) {
-        $nids = array_keys($results['node']);
-        $nodes = node_load_multiple($nids);
-
-        //Display timesheet entry at 'create invoice page'
-        foreach ($nodes as $node) {
-         $project_name = node_load($node->field_project_name['und'][0]['target_id']);
-         $rows[$node->nid] = array($project_name->title,$node->field_issue_number['und'][0]['value'],secToHM($node->field_work_hour['und'][0]['value']), '<a href='.$base_url.'/desc/'.$node->nid.' target="_blank">'.$node->name.'</a>' ,date('Y-m-d',$node->field_date['und'][0]['value']));
-        }
-        $form['div'] = array(
-          '#prefix' => '<div id="place">',
-          '#suffix' => '</div>',
-        );
-        $form['div']['data'] = array(
-          '#type' => 'tableselect',
-          '#header' => $header,
-          '#options' => $rows
-        );
-        $form['div']['submit'] = array(
-          '#type' => 'submit',
-          '#value' => 'Create'
-        );
-      }     
-      else {
-        $form['submit']['#type'] = FALSE;
-      }
-    }
-  }
-  
-  if($form_id == 'timesheet_entry_node_form'){
+  if($form_id == 'timesheet_entry_node_form') {
     $form['field_work_hour']['und'][0]['value']['#description'] = 'Format: H:i';
   }
   
-  if($form_id == 'timesheet_entry_node_form'){
-    //Developer can access only his projects in the drop down at 'add content page'
-    if (in_array("Developer",$user->roles)) {
+  if($form_id == 'timesheet_entry_node_form') {
+    // Developer can access only his projects in the drop down at 'add content page'.
+    if (in_array("Developer", $user->roles)) {
      $query1 = db_select('users', 'u');
      $query1
-           ->fields('u', array('uid','name'))
-           ->condition('u.name',$user->name);
+           ->fields('u', array('uid', 'name'))
+           ->condition('u.name', $user->name);
      $result1 = $query1->execute();
      $value1 = $result1->fetch();
    
@@ -381,17 +81,19 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
            ->fieldCondition('field_developer', 'target_id', $value1->uid);
      $results = $query->execute();  
      
-     if (!empty($results['node'])){
+     if (!empty($results['node'])) {
       $nids = array_keys($results['node']);
      
-      foreach ($form['field_project_name']['und']['#options'] as $key => $value){
-        if(!in_array($key, $nids)){
+      foreach ($form['field_project_name']['und']['#options'] as $key => $value) {
+        if(!in_array($key, $nids)) {
           unset($form['field_project_name']['und']['#options'][$key]);
         }
       }
      }
      else {
-       unset($form['field_project_name']['und']['#options']);
+        foreach ($form['field_project_name']['und']['#options'] as $i => $value) {
+          unset($form['field_project_name']['und']['#options'][$i]);
+        }
      }
      
      $form['field_approvednot_approved']['#access'] = FALSE;
@@ -399,98 +101,81 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id){
     }
   }
 
-  if($form_id == 'timesheet_entry_node_form'){
-    //Project Manager can access only his projects in the drop down at 'add content page'
-    if (in_array("Project Manager",$user->roles)) {
+  if($form_id == 'timesheet_entry_node_form') {
+    // Project Manager can access only his projects in the drop down at 'add content page'.
+    if (in_array("Project Manager", $user->roles)) {
       $query2 = db_select('users', 'u');
       $query2
-           ->fields('u', array('uid','name'))
-           ->condition('u.name',$user->name);
+            ->fields('u', array('uid', 'name'))
+            ->condition('u.name', $user->name);
       $result2 = $query2->execute();
       $value2 = $result2->fetch();
-   
+
       $query = new EntityFieldQuery;
       $query->entityCondition('entity_type', 'node')
             ->entityCondition('bundle', 'project_entry')
             ->fieldCondition('field_project_manager', 'target_id', $value2->uid);
       $results = $query->execute();
       
-      if (!empty($results['node'])){
+      if (!empty($results['node'])) {
         $nids = array_keys($results['node']);
       
-        foreach ($form['field_project_name']['und']['#options'] as $key => $value){
-          if(!in_array($key, $nids)){
+        foreach ($form['field_project_name']['und']['#options'] as $key => $value) {
+          if(!in_array($key, $nids)) {
             unset($form['field_project_name']['und']['#options'][$key]);
           }
         }
       }
       else {
-        unset($form['field_project_name']['und']['#options']);
+          foreach ($form['field_project_name']['und']['#options'] as $i => $value) {
+            unset($form['field_project_name']['und']['#options'][$i]);
+          }
       }
       
       $form['field_invoice']['#access'] = FALSE;
     }
   }
   
-  //Admin name will not mentioned at 'member exposed filter' of 'search view'
-  if($form_id == 'views_exposed_form'){
+  // Only Developer and Project Manager names mentioned at 'member exposed filter' of 'search view'.
+  if($form_id == 'views_exposed_form') {
     $query1 = db_select('users', 'u');
-    $query1 
-          ->fields('u', array('uid','name'))
-          ->join('users_roles', 'ur', 'u.uid = ur.uid'); 
-    $result1 = $query1->execute();
-    
-    $query2 = db_select('role', 'r');
-    $query2
-          ->fields('r', array('rid','name'))
-          ->condition('r.name','administrator');
-    $result2 = $query2->execute();
-    $value2 = $result2->fetch();
+    $query1->fields('u', array('uid', 'name'));
+    $query1->join('users_roles', 'ur', 'u.uid = ur.uid');
+    $query1->join('role', 'r', 'r.rid = ur.rid');
+    $query1->condition('r.name', array('Developer', 'Project Manager'), 'IN');
+    $result1 = $query1->execute()
+                      ->fetchAll();
        
-    $query3 = db_select('users_roles', 'ur');
-    $query3
-          ->fields('ur', array('uid','rid'))
-          ->condition('ur.rid',$value2->rid);
-   $result3 = $query3->execute();
-   $value3 = $result3->fetch();
-       
-   $query4 = db_select('users', 'us');
-   $query4
-         ->fields('us', array('uid','name'))
-         ->condition('us.uid',$value3->uid);
-   $result4 = $query4->execute();
-   $value4 = $result4->fetch();
-       
-   $rows = array();
-   $rows[NULL] = '-Any-';
-   //Assign user name to array with value and key for select list  
-   foreach ($result1 as $value1) {
-    if($value1->name != $value4->name){
+    $rows = array();
+    $rows[NULL] = '-Any-';
+    // Assign user name to array with value and key for select list.
+    foreach ($result1 as $value1) {
       $rows[$value1->name] = $value1->name;
-    }        
-   }
+    }
  
-   //Replace textbox exposed filter with select list
-   $form['uid'] = array(
-    '#type' => 'select',
-    '#options' => $rows,
-     // '#multiple' => TRUE,
-    '#default_value' => array('-Any-')
-   );  
- 
-// $ab = implode(',', $form_state['input']['uid']);
-// unset($form_state['input']['uid']);
-// $form_state['input']['uid'] = $ab;
+    // Replace textbox exposed filter with select list.
+    $form['uid'] = array(
+      '#type' => 'select',
+      '#options' => $rows,
+      '#default_value' => array('-Any-')
+    );  
   }
 }
 
-//Form render by Project Manager 'timesheet view' to display checkbox
-function attach_view_form($form,&$form_state,$vars) {
+/**
+ * @desc Form render by Project Manager 'timesheet view' to display checkbox.
+ * @param $form.
+ * @param $form_state.
+ * @param $vars.
+ * @return $form.
+ * array.
+ */
+function attach_view_form($form, &$form_state, $vars) {
   $node1 = node_load($vars);
 
-  //Checkbox display as checked or unchecked according to stored value
-  if(isset($node1->field_approvednot_approved['und'][0]['value'])){
-    if($node1->field_approvednot_approved['und'][0]['value'] == 'Approved'){
+  // Checkbox display as checked or unchecked according to stored value.
+  if(isset($node1->field_approvednot_approved['und'][0]['value'])) {
+    if($node1->field_approvednot_approved['und'][0]['value'] == 'Approved') {
       $default = 1;     
     }
     elseif ($node1->field_approvednot_approved['und'][0]['value'] == 'Not Approved') {
@@ -501,35 +186,40 @@ function attach_view_form($form,&$form_state,$vars) {
     $default = 0;      
   }
     
-  //Check timesheet entry invoiced or not 
+  // Check timesheet entry invoiced or not.
   $invoice = NULL;
-  if(isset($node1->field_invoice['und'][0]['value'])){
-    if($node1->field_invoice['und'][0]['value'] == 'Invoice'){
+  if(isset($node1->field_invoice['und'][0]['value'])) {
+    if($node1->field_invoice['und'][0]['value'] == 'Invoice') {
       $invoice = 1;
     }
   }
     
-  //Display checkbox for timesheet entry
+  // Display checkbox for timesheet entry.
   $form = array();
   $form['replace'] = array(
    '#type' => 'checkbox',
    '#default_value' => $default,
-   //Disable checkbox if timesheet entry invoiced
+   // Disable checkbox if timesheet entry invoiced.
    '#disabled' => $invoice != NULL ? TRUE : FALSE,
    '#ajax' => array(
      'callback' => 'checkbox_status_change',
      ),
    );
-   //'Nid' passed for further process
+   // 'Nid' passed for further process.
    $form['node'] = array('#type' => 'hidden', '#value' => $vars);
    return $form;
 }
 
-//Function call through ajax when Project Manager 'timesheet view' checkbox clicked
-function checkbox_status_change($form,&$form_state){
+/**
+ * @desc Function call through ajax when Project Manager 'timesheet view' checkbox clicked.
+ * @param $form.
+ * @param $form_state.
+ * @return.
+ */
+function checkbox_status_change($form, &$form_state) {
   $vars = node_load($form['node']['#value']);
   
-  if($form_state['values']['replace'] == '1'){     
+  if($form_state['values']['replace'] == '1') {     
     $vars->field_approvednot_approved['und'][0]['value'] = 'Approved';
     node_save($vars);     
   }
