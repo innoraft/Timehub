@@ -14,7 +14,7 @@ function attach_view_node_access($node, $op, $account) {
   
   // Project Manager not able to edit 'timesheet_entry' which invoiced.
   if($op == 'update' && $node->type == 'timesheet_entry') {
-    if($url == 'timesheet-pm' || $url == 'search'){
+    if($url == 'timesheet-pm' || $url == 'search') {
       if(in_array('Project Manager', $user->roles)) {
         if(isset($node->field_invoice[$node->language][0]['value'])) {
           if($node->field_invoice[$node->language][0]['value'] == 'Invoice') {
@@ -27,7 +27,7 @@ function attach_view_node_access($node, $op, $account) {
   
   // Developer not able to edit 'timesheet_entry' which approved.
   if($op == 'update' && $node->type == 'timesheet_entry') {
-    if($url == 'timesheet-dev'){
+    if($url == 'timesheet-dev') {
       if(in_array('Developer', $user->roles)) {
         if(isset($node->field_approvednot_approved[$node->language][0]['value'])) {
           if($node->field_approvednot_approved[$node->language][0]['value'] == 'Approved') {
