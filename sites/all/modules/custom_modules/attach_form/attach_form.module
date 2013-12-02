@@ -379,8 +379,6 @@ function attach_form_form($form, &$form_state) {
     // G-comment : #value should be use with a t() function, e.g. t('ABC').
   );
 
-  $form['#submit'][] = 'submit_invoice';
-
   return $form;
 }
 
@@ -501,7 +499,8 @@ function  attach_form_form_alter(&$form,&$form_state,$form_id) {
         );
         $form['submit'] = array(
           '#type' => 'submit',
-          '#value' => 'Create'
+          '#value' => 'Create',
+          '#submit' => array('submit_invoice')
         );
       }     
       else {
