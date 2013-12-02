@@ -87,8 +87,8 @@ function invoice_report() {
   $time = $dt->format('H:i');
   $datetime = '<span>Date: ' . $date . '</span><span id = "time">Time: ' . $time . '</span>';
   
-  $header = array('project Nmae', 'Issue Number', 'work Hour');
-  $rows = array();
+  $header = array(array('data' => t('Project Name')), array('data' => t('Issue Number')), array('data' => t('Work Hour')));
+  $rows = NULL;
   
   // Select distinct project name target id for further use.
   $query1 = db_select('field_data_field_project_name', 'pn');
@@ -111,12 +111,12 @@ function invoice_report() {
       $nids = array_keys($results['node']);
       $nodes = node_load_multiple($nids);
 
-      foreach ($nodes as $node) {
-        $project_name = node_load($node->field_project_name['und'][0]['target_id']);
-        $rows[] = array($project_name->title, $node->field_issue_number['und'][0]['value'], secToHM($node->field_work_hour['und'][0]['value']));
-        $total += $node->field_work_hour['und'][0]['value'];
+      foreach ($nodes as $node) { 
+        $project_name = node_load($node->field_project_name[$node->language][0]['target_id']);
+        $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))));
+        $total += $node->field_work_hour[$node->language][0]['value'];
       }
-      $rows[] = array('', '', "Total = " . secToHM($total));
+      $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total))));
     }
   }
   
@@ -163,16 +163,15 @@ function  invoice($values = '') {
   $time = $dt->format('H:i');
   $datetime = '<span>Date: ' . $date . '</span><span id = "time">Time: ' . $time . '</span>';
   
-  $header = array('project Nmae', 'Issue Number', 'work Hour');
-  $rows = array();
-  
+  $header = array(array('data' => t('Project Name')), array('data' => t('Issue Number')), array('data' => t('Work Hour')));
+  $rows = NULL;
   $nids = explode(',', $values);
   $nodes1 = node_load_multiple($nids);
   
   // Select distinct project name with related nids for further use.
   $arr = array();
   foreach ($nodes1 as $node1) {
-    $project_name = node_load($node1->field_project_name['und'][0]['target_id']);
+    $project_name = node_load($node1->field_project_name[$node1->language][0]['target_id']);
     $arr[$project_name->title][] = $node1->nid;
   }
   
@@ -181,11 +180,11 @@ function  invoice($values = '') {
     $total = 0;
     $nodes2 = node_load_multiple($ar);
     foreach ($nodes2 as $node2) {  
-      $project_name = node_load($node2->field_project_name['und'][0]['target_id']);
-      $rows[] = array($project_name->title, $node2->field_issue_number['und'][0]['value'], secToHM($node2->field_work_hour['und'][0]['value']));
-      $total += $node2->field_work_hour['und'][0]['value'];
+      $project_name = node_load($node2->field_project_name[$node2->language][0]['target_id']);
+      $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node2->field_issue_number[$node2->language][0]['value'])), array('data' => t(secToHM($node2->field_work_hour[$node2->language][0]['value']))));
+      $total += $node2->field_work_hour[$node2->language][0]['value'];
     }
-    $rows[] = array('', '', "Total = " . secToHM($total));
+    $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total))));
   }
   return $datetime . theme('table', array('header' => $header, 'rows' => $rows));
 }
@@ -199,11 +198,11 @@ function  invoice($values = '') {
  */
 function description($values = '') {
   $node = node_load($values);
-  if(!isset($node->body['und'][0]['value'])) {
+  if(!isset($node->body[$node->language][0]['value'])) {
     $description = '';
   }
   else {
-    $description = $node->body['und'][0]['value'];
+    $description = $node->body[$node->language][0]['value'];
   }
   return $description;
 }
@@ -395,13 +394,13 @@ function attach_form_form($form, &$form_state) {
 function  attach_form_form_alter(&$form,&$form_state,$form_id) {
   global $user; 
   global $base_url;
-  
-    // Alter 'create invoice page' to display timesheet entry.
+
+  // Alter 'create invoice page' to display timesheet entry.
   if($form_id == 'attach_form_form') {
     if (in_array("Project Manager", $user->roles) || in_array("administrator", $user->roles)) {
-      $header = array('project Nmae', 'Issue Number', 'work Hour', 'Member', 'Date');
-      $rows = array();
-     
+      $header = array(array('data' => t('Project Name')), array('data' => t('Issue Number')), array('data' => t('Work Hour')), array('data' => t('Member')), array('data' => t('Date')));
+      $rows = NULL;
+        
       // Check either project name select with 'select list' or not.
       $project = 0;
       if(isset($form_state['values']['projects'])) {
@@ -492,19 +491,15 @@ function  attach_form_form_alter(&$form,&$form_state,$form_id) {
 
         // Display timesheet entry at 'create invoice page'.
         foreach ($nodes as $node) {
-         $project_name = node_load($node->field_project_name['und'][0]['target_id']);
-         $rows[$node->nid] = array($project_name->title, $node->field_issue_number['und'][0]['value'], secToHM($node->field_work_hour['und'][0]['value']), '<a href=' . $base_url . '/desc/' . $node->nid . ' target="_blank">' . $node->name . '</a>', date('Y-m-d', $node->field_date['und'][0]['value']));
+         $project_name = node_load($node->field_project_name[$node->language][0]['target_id']);
+         $rows[$node->nid] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))), array('data' => t('<a href=' . $base_url . '/desc/' . $node->nid . ' target="_blank">' . $node->name . '</a>')), array('data' => t(date('Y-m-d', $node->field_date[$node->language][0]['value']))));
         }
-        $form['div'] = array(
-          '#prefix' => '<div id="place">',
-          '#suffix' => '</div>',
-        );
-        $form['div']['data'] = array(
+        $form['data'] = array(
           '#type' => 'tableselect',
           '#header' => $header,
           '#options' => $rows
         );
-        $form['div']['submit'] = array(
+        $form['submit'] = array(
           '#type' => 'submit',
           '#value' => 'Create'
         );
@@ -551,7 +546,7 @@ function submit_invoice($form, &$form_state) {
     if($value != 0){
       $nids[] = $value;
       $node = node_load($value);
-      $node->field_invoice['und'][0]['value'] = 'Invoice';
+      $node->field_invoice[$node->language][0]['value'] = 'Invoice';
       node_save($node);
     }
   }

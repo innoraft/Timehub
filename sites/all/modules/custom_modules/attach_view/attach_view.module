@@ -10,28 +10,33 @@
  */
 function attach_view_node_access($node, $op, $account) {
   global $user;
-    // Developer not able to edit 'timesheet_entry' which approved.
-    if(in_array('Developer', $user->roles)) {
-      if(isset($node->field_approvednot_approved['und'][0]['value'])) {
-        if($node->field_approvednot_approved['und'][0]['value'] == 'Approved') {
-          return NODE_ACCESS_DENY;
-        }
-        else {
-          return NODE_ACCESS_ALLOW;
-        }
-      }
-    }
-    // Project Manager not able to edit 'timesheet_entry' which invoiced.
-    if(in_array('Project Manager', $user->roles)) {
-      if(isset($node->field_invoice['und'][0]['value'])) {
-        if($node->field_invoice['und'][0]['value'] == 'Invoice') {
-          return NODE_ACCESS_DENY;
-        }
-        else {
-          return NODE_ACCESS_ALLOW;
+  $url=request_path();
+  
+  // Project Manager not able to edit 'timesheet_entry' which invoiced.
+  if($op == 'update' && $node->type == 'timesheet_entry') {
+    if($url == 'timesheet-pm' || $url == 'search'){
+      if(in_array('Project Manager', $user->roles)) {
+        if(isset($node->field_invoice[$node->language][0]['value'])) {
+          if($node->field_invoice[$node->language][0]['value'] == 'Invoice') {
+            return NODE_ACCESS_DENY;
+          }
         }
       }
     }
+  }
+  
+  // Developer not able to edit 'timesheet_entry' which approved.
+  if($op == 'update' && $node->type == 'timesheet_entry') {
+    if($url == 'timesheet-dev'){
+      if(in_array('Developer', $user->roles)) {
+        if(isset($node->field_approvednot_approved[$node->language][0]['value'])) {
+          if($node->field_approvednot_approved[$node->language][0]['value'] == 'Approved') {
+            return NODE_ACCESS_DENY;
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -62,7 +67,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id) {
   global $user; 
   
   if($form_id == 'timesheet_entry_node_form') {
-    $form['field_work_hour']['und'][0]['value']['#description'] = 'Format: H:i';
+    $form['field_work_hour'][$form['language']['#value']][0]['value']['#description'] = 'Format: H:i';
   }
   
   if($form_id == 'timesheet_entry_node_form') {
@@ -84,15 +89,15 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id) {
      if (!empty($results['node'])) {
       $nids = array_keys($results['node']);
      
-      foreach ($form['field_project_name']['und']['#options'] as $key => $value) {
+      foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
         if(!in_array($key, $nids)) {
-          unset($form['field_project_name']['und']['#options'][$key]);
+          unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
         }
       }
      }
      else {
-        foreach ($form['field_project_name']['und']['#options'] as $i => $value) {
-          unset($form['field_project_name']['und']['#options'][$i]);
+        foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $i => $value) {
+          unset($form['field_project_name'][$form['language']['#value']]['#options'][$i]);
         }
      }
      
@@ -119,16 +124,16 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id) {
       
       if (!empty($results['node'])) {
         $nids = array_keys($results['node']);
-      
-        foreach ($form['field_project_name']['und']['#options'] as $key => $value) {
+
+        foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
           if(!in_array($key, $nids)) {
-            unset($form['field_project_name']['und']['#options'][$key]);
+            unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
           }
         }
       }
       else {
-          foreach ($form['field_project_name']['und']['#options'] as $i => $value) {
-            unset($form['field_project_name']['und']['#options'][$i]);
+          foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $i => $value) {
+            unset($form['field_project_name'][$form['language']['#value']]['#options'][$i]);
           }
       }
       
@@ -174,11 +179,11 @@ function attach_view_form($form, &$form_state, $vars) {
   $node1 = node_load($vars);
 
   // Checkbox display as checked or unchecked according to stored value.
-  if(isset($node1->field_approvednot_approved['und'][0]['value'])) {
-    if($node1->field_approvednot_approved['und'][0]['value'] == 'Approved') {
+  if(isset($node1->field_approvednot_approved[$node1->language][0]['value'])) {
+    if($node1->field_approvednot_approved[$node1->language][0]['value'] == 'Approved') {
       $default = 1;     
     }
-    elseif ($node1->field_approvednot_approved['und'][0]['value'] == 'Not Approved') {
+    elseif ($node1->field_approvednot_approved[$node1->language][0]['value'] == 'Not Approved') {
       $default = 0;      
     }
   }
@@ -188,8 +193,8 @@ function attach_view_form($form, &$form_state, $vars) {
     
   // Check timesheet entry invoiced or not.
   $invoice = NULL;
-  if(isset($node1->field_invoice['und'][0]['value'])) {
-    if($node1->field_invoice['und'][0]['value'] == 'Invoice') {
+  if(isset($node1->field_invoice[$node1->language][0]['value'])) {
+    if($node1->field_invoice[$node1->language][0]['value'] == 'Invoice') {
       $invoice = 1;
     }
   }
@@ -218,13 +223,13 @@ function attach_view_form($form, &$form_state, $vars) {
  */
 function checkbox_status_change($form, &$form_state) {
   $vars = node_load($form['node']['#value']);
-  
+
   if($form_state['values']['replace'] == '1') {     
-    $vars->field_approvednot_approved['und'][0]['value'] = 'Approved';
+    $vars->field_approvednot_approved[$vars->language][0]['value'] = 'Approved';
     node_save($vars);     
   }
   elseif ($form_state['values']['replace'] == '0') { 
-    $vars->field_approvednot_approved['und'][0]['value'] = 'Not Approved';
+    $vars->field_approvednot_approved[$vars->language][0]['value'] = 'Not Approved';
     node_save($vars); 
   }  
   return;
