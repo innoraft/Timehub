@@ -5,7 +5,7 @@
  */
 
 /**
- * @desc implements hook_node_access()  
+ * @desc implements hook_node_access().
  * @return constant.
  */
 function attach_view_node_access($node, $op, $account) {
