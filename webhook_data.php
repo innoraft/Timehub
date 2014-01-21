@@ -1,5 +1,6 @@
 <?php
 
 $filename = "c:\webhook.txt";
-$payload = json_decode($_GET['payload']);
+$fullPostData = file_get_contents('php://input');
+$payload = json_decode($fullPostData);
 file_put_contents($filename,$payload);
