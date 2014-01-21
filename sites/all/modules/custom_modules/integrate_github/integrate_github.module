@@ -18,6 +18,6 @@ function github_info(){
   $url = $payload->repository->url;
   dpm($url);
   
-//  watchdog('integrate_github', $message);
-  return "hell";
+  watchdog('integrate_github', $url);
+  return "hello";
 }
