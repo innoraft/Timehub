@@ -18,5 +18,5 @@ function github_info(){
   $message = $obj->repository->name;
   dpm($message);
   watchdog('integrate_github', $message);
-  return "hello";
+  return "hell";
 }
