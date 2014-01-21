@@ -6,7 +6,6 @@ function integrate_github_menu() {
   $items['github_info'] = array(
     'title' => t('Github Info'),
     'page callback' => 'github_info',
-    'page argument' => array(1),
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM
   ); 
@@ -14,8 +13,8 @@ function integrate_github_menu() {
   return $items;
 }
 
-function github_info($values = ''){
-  $payload = json_decode($_POST[$values]);
+function github_info(){
+  $payload = json_decode($_GET['payload']);
   if ($payload->ref === 'refs/heads/aman-correction-code'){
     $url = $payload->repository->url;
     dpm($url);
