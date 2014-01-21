@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Code for the Webhook Example feature.
+ */
+
+include_once 'webhook_example.features.inc';
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function webhook_example_ctools_plugin_directory($module, $type) {
+  if ('webhook' == $module) {
+    return "plugins/{$type}";
+  }
+}

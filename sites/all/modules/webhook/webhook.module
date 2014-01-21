@@ -1,0 +1,202 @@
+<?php
+
+/**
+ * @file
+ * Webhook module functions.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function webhook_menu() {
+  $items = array();
+
+  $items['webhook/%'] = array(
+    'title' => 'Webhook',
+    'page callback' => 'webhook_process_request',
+    'page arguments' => array(1),
+    'access arguments' => array('trigger webhook'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function webhook_permission() {
+  $permissions = array();
+
+  $permissions['administer webhook'] = array(
+    'title' => t('Administer webhooks.'),
+  );
+
+  $permissions['trigger webhook'] = array(
+    'title' => t('Trigger a webhook'),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function webhook_ctools_plugin_api($module, $api) {
+  if ('webhook' == $module && in_array($api, array('processor', 'unserialize'))) {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function webhook_ctools_plugin_directory($module, $type) {
+  if ('webhook' == $module || 'export_ui' == $type) {
+    return "plugins/{$type}";
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function webhook_ctools_plugin_type() {
+  $plugins = array();
+
+  $plugins['processor'] = array(
+    'classes' => array('handler'),
+  );
+
+  $plugins['unserializer'] = array(
+    'classes' => array('handler'),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Processes a webhook trigger call.
+ *
+ * @param string $name
+ *   The name of the webhook that was triggered.
+ */
+function webhook_process_request($name) {
+
+  ctools_include('plugins');
+
+  // We we receive an invalid request, error and exit.
+  if ('POST' != $_SERVER['REQUEST_METHOD']) {
+    drupal_add_http_header('Status', '405 Method Not Allowed');
+    drupal_exit();
+  }
+
+  $webhook = webhook_load($name);
+  if (!$webhook || !$webhook->enabled) {
+    return MENU_NOT_FOUND;
+  }
+
+  $unserializer = webhook_load_unserializer($webhook->unserializer);
+  $raw_post = file_get_contents("php://input");
+  $data = $unserializer->unserialize($raw_post);
+
+  $processor = webhook_load_processor($webhook->processor);
+  $response = $processor->process($data);
+
+  return $response;
+}
+
+/**
+ * Saves a single webhook.
+ *
+ * @param object $webhook
+ *   The webhook object to save.
+ */
+function webhook_save(&$webhook) {
+  $update = array();
+  if (isset($webhook->whid) && is_numeric($webhook->whid)) {
+    $update = array('whid');
+  }
+  return drupal_write_record('webhook', $webhook, $update);
+}
+
+/**
+ * Loads a webhook by machine name.
+ *
+ * @param string $name
+ *   The name of the webhook to load.
+ *
+ * @return object
+ *   The webhook object or NULL if not found.
+ */
+function webhook_load($name) {
+  ctools_include('export');
+  $result = ctools_export_load_object('webhook', 'names', array($name));
+  if (isset($result[$name])) {
+    return $result[$name];
+  }
+}
+
+/**
+ * Loads multiple webhooks by name.
+ */
+function webhook_load_multiple(array $names) {
+  ctools_include('export');
+  $results = ctools_export_load_object('webhook', 'names', $names);
+  return array_filter($results);
+}
+
+/**
+ * Loads and instantiates unserializer class.
+ *
+ * @param string $name
+ *   The name of the unserializer to load.
+ *
+ * @return Webhook_Unserializer
+ *   The the instatiated unserializer object.
+ */
+function webhook_load_unserializer($name) {
+  $class_name = ctools_plugin_load_class('webhook', 'unserializer', $name, 'handler');
+  return new $class_name();
+}
+
+/**
+ * Loads and instantiates processor class.
+ *
+ * @param string $name
+ *   The name of the processor to load.
+ *
+ * @return Webhook_Processor
+ *   The the instatiated processor object.
+ */
+function webhook_load_processor($name) {
+  $class_name = ctools_plugin_load_class('webhook', 'processor', $name, 'handler');
+  return new $class_name();
+}
+
+/**
+ * Fetches a list of processor plugins.
+ *
+ * @return array
+ *   An associative array of the processors keyed by name. 
+ */
+function webhook_get_processor_list() {
+  $plugins = array();
+  foreach (ctools_get_plugins('webhook', 'processor') as $name => $info) {
+    $plugins[$name] = $info['title'];
+  }
+  return $plugins;
+}
+
+/**
+ * Fetches a list of unserializer plugins.
+ *
+ * @return array
+ *   An associative array of unserializer plugins keyed by name.
+ */
+function webhook_get_unserlizer_list() {
+  $plugins = array();
+  foreach (ctools_get_plugins('webhook', 'unserializer') as $name => $info) {
+    $plugins[$name] = $info['title'];
+  }
+  return $plugins;
+}
+

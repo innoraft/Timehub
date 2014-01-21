@@ -16,5 +16,7 @@ function integrate_github_menu() {
 function github_info(){
   $obj = json_decode($_POST['payload']);
   $message = $obj->repository->name;
-  watchdog('Repository', $message);
+  dpm($message);
+  watchdog('integrate_github', $message);
+  return "hello";
 }

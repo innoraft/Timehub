@@ -1,0 +1,20 @@
+name = Webhook Extras
+description = Useful plugins for the webhook module.
+
+core = 7.x
+
+dependencies[] = webhook
+
+; Unserializers
+files[] = includes/Webhook_Plugins_Unserializer_Interface.inc
+files[] = plugins/unserializer/Webhook_Plugins_Unserializer_Autodetect.class.inc
+files[] = plugins/unserializer/Webhook_Plugins_Unserializer_Json.class.inc
+files[] = plugins/unserializer/Webhook_Plugins_Unserializer_UrlEncoded.class.inc
+files[] = plugins/unserializer/Webhook_Plugins_Unserializer_Json.class.inc
+
+; Information added by drupal.org packaging script on 2013-09-11
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "webhook"
+datestamp = "1378911831"
+
