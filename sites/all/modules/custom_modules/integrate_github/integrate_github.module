@@ -14,16 +14,11 @@ function integrate_github_menu() {
 }
 
 function github_info(){
-  $filename = "c:\tmp\webhook_data.txt";
-  foreach($_POST as $key => $value){
-  file_put_contents($filename, "$key: $value\n", FILE_APPEND);
+  $payload = json_decode($_POST['payload']);
+  if ($payload->ref === 'refs/heads/aman-correction-code'){
+    $url = $payload->repository->url;
+    dpm($url);
   }
-  
-//  $payload = json_decode($_POST['payload']);
-//  if ($payload->ref === 'refs/heads/aman-correction-code'){
-//    $url = $payload->repository->url;
-//    dpm($url);
-//  }
 //  watchdog('integrate_github', $message);
   return "hell";
 }
