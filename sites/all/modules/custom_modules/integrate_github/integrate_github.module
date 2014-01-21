@@ -15,10 +15,9 @@ function integrate_github_menu() {
 
 function github_info(){
   $payload = json_decode(file_get_contents('php://input'), TRUE);
-  if ($payload->ref === 'refs/heads/aman-correction-code'){
     $url = $payload->repository->url;
     dpm($url);
-  }
+  
 //  watchdog('integrate_github', $message);
   return "hell";
 }
