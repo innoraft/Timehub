@@ -14,11 +14,11 @@ function integrate_github_menu() {
 }
 
 function github_info(){
-  $payload = json_decode($_GET['payload']);
+  $payload = json_decode($_POST['payload']);
   if ($payload->ref === 'refs/heads/aman-correction-code'){
     $url = $payload->repository->url;
     dpm($url);
   }
-  //watchdog('integrate_github', $message);
+  watchdog('integrate_github', $message);
   return "hell";
 }
