@@ -6,6 +6,7 @@ function integrate_github_menu() {
   $items['github_info'] = array(
     'title' => t('Github Info'),
     'page callback' => 'github_info',
+    'page argument' => array(1),
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM
   ); 
@@ -13,10 +14,12 @@ function integrate_github_menu() {
   return $items;
 }
 
-function github_info(){
-  $obj = json_decode($_POST['payload']);
-  $message = $obj->repository->name;
-  dpm($message);
-  watchdog('integrate_github', $message);
+function github_info($values = ''){
+  $payload = json_decode($_POST[$values]);
+  if ($payload->ref === 'refs/heads/aman-correction-code'){
+    $url = $payload->repository->url;
+    dpm($url);
+  }
+  //watchdog('integrate_github', $message);
   return "hell";
 }
