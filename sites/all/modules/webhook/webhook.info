@@ -1,0 +1,22 @@
+name = Webhook
+description = Webhook callback handler.
+
+core = 7.x
+
+dependencies[] = ctools
+
+; Export UI
+files[] = plugins/export_ui/webhook.inc
+
+;Processors
+files[] = includes/Webhook_Plugins_Processor_Interface.inc
+
+; Unserializers
+files[] = includes/Webhook_Plugins_Unserializer_Interface.inc
+
+; Information added by drupal.org packaging script on 2013-09-11
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "webhook"
+datestamp = "1378911831"
+

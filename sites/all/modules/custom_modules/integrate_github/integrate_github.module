@@ -1,0 +1,22 @@
+<?php
+
+function integrate_github_menu() {
+  $items = array();  
+  
+  $items['github_info'] = array(
+    'title' => t('Github Info'),
+    'page callback' => 'github_info',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM
+  ); 
+  
+  return $items;
+}
+
+function github_info(){
+  //watchdog('Webhook', 'Repository update information', $_POST['payload'], WATCHDOG_INFO);
+  $payload = json_decode($_POST['payload']);
+  watchdog("integrate_github", '<pre>' . print_r( $payload, true) . '</pre>'); 
+  return "hello";
+}
+
