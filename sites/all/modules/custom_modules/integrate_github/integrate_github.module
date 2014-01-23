@@ -14,11 +14,7 @@ function integrate_github_menu() {
 }
 
 function github_info(){
-  $payload = json_decode($_POST['payload']);
-  print json_encode($payload);
-  $url = $payload->repository->url;
-  dpm($url);
-  
-  //watchdog('integrate_github', $url);
+  watchdog('integrate_github', $_POST['payload'] = array());
   return "hello";
 }
+
