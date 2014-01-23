@@ -14,7 +14,8 @@ function integrate_github_menu() {
 }
 
 function github_info(){
-  watchdog('Webhook', 'Repository update information', $_POST['payload'], WATCHDOG_INFO);
+  //watchdog('Webhook', 'Repository update information', $_POST['payload'], WATCHDOG_INFO);
+  watchdog("integrate_github", '<pre>' . print_r( $_POST['payload'], true) . '</pre>'); 
   return "hello";
 }
 
