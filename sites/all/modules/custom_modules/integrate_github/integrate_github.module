@@ -16,7 +16,7 @@ function integrate_github_menu() {
 function github_info(){
   $payload = json_decode($_POST['payload']);
   $url = $payload->repository->url;
-  print var_dump($url);
+  print json_encode($url);
   
   //watchdog('integrate_github', $url);
   return "hello";
