@@ -37,90 +37,95 @@ function  github_info_access() {
  * @return String.
  */
 function github_info(){
-  $json = '{"ref":"refs/heads/test","after":"9ef7d3742a63794235db4489b556b7becd013431","before":"1ae6ea6fab7e11ad905f6f4e03211eeea05bc6f1","created":false,"deleted":false,"forced":false,"compare":"https://github.com/aman4you/Timehub/compare/1ae6ea6fab7e...9ef7d3742a63","commits":[{"id":"9ef7d3742a63794235db4489b556b7becd013431","distinct":true,"message":"save commit information\n\nref: innoraft/Timehub [ Bill:yes] [t:8:15] issue #22","timestamp":"2014-01-23T20:41:09-08:00","url":"https://github.com/aman4you/Timehub/commit/9ef7d3742a63794235db4489b556b7becd013431","author":{"name":"aman","email":"aman.goel2452@gmail.com","username":"aman4you"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com","username":"aman4you"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]}],"head_commit":{"id":"9ef7d3742a63794235db4489b556b7becd013431","distinct":true,"message":"save commit information\n\nref: innoraft/Timehub [Bill:yes] [t:8:15] issue #22","timestamp":"2014-01-23T20:41:09-08:00","url":"https://github.com/aman4you/Timehub/commit/9ef7d3742a63794235db4489b556b7becd013431","author":{"name":"aman","email":"aman.goel2452@gmail.com","username":"aman4you"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com","username":"aman4you"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]},"repository":{"id":13239933,"name":"Timehub","url":"https://github.com/aman4you/Timehub","description":"Timesheet entry to supplement project management on github","watchers":0,"stargazers":0,"forks":0,"fork":true,"size":8295,"owner":{"name":"aman4you","email":"aman.goel@innoraft.com"},"private":false,"open_issues":0,"has_issues":false,"has_downloads":true,"has_wiki":true,"language":"PHP","created_at":1380620476,"pushed_at":1390539376,"master_branch":"master"},"pusher":{"name":"aman4you","email":"aman.goel@innoraft.com"}}';
+  $json = '{"ref":"refs/heads/testing","after":"4274cfd32bdd3093bca8459201618d8a64fe3ef4","before":"0000000000000000000000000000000000000000","created":true,"deleted":false,"forced":true,"compare":"https://github.com/aman4you/Timehub/compare/32e3d46bcef2^...4274cfd32bdd","commits":[{"id":"32e3d46bcef200e3dea17b8e9b702e39cd4b9708","distinct":true,"message":"first commit of first push\n\nref: innoraft/Timehub issue#17","timestamp":"2014-01-28T05:46:06-08:00","url":"https://github.com/aman4you/Timehub/commit/32e3d46bcef200e3dea17b8e9b702e39cd4b9708","author":{"name":"aman","email":"aman.goel2452@gmail.com"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]},{"id":"4274cfd32bdd3093bca8459201618d8a64fe3ef4","distinct":true,"message":"second commit of first push\n\nref: innoraft/Timehub issue#17","timestamp":"2014-01-28T05:48:20-08:00","url":"https://github.com/aman4you/Timehub/commit/4274cfd32bdd3093bca8459201618d8a64fe3ef4","author":{"name":"aman","email":"aman.goel2452@gmail.com"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]}],"head_commit":{"id":"4274cfd32bdd3093bca8459201618d8a64fe3ef4","distinct":true,"message":"second commit of first push\n\nref: innoraft/Timehub issue#17","timestamp":"2014-01-28T05:48:20-08:00","url":"https://github.com/aman4you/Timehub/commit/4274cfd32bdd3093bca8459201618d8a64fe3ef4","author":{"name":"aman","email":"aman.goel2452@gmail.com"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]},"repository":{"id":13239933,"name":"Timehub","url":"https://github.com/aman4you/Timehub","description":"Timesheet entry to supplement project management on github","watchers":0,"stargazers":0,"forks":0,"fork":true,"size":8731,"owner":{"name":"aman4you","email":"aman.goel@innoraft.com"},"private":false,"open_issues":0,"has_issues":false,"has_downloads":true,"has_wiki":true,"language":"PHP","created_at":1380620476,"pushed_at":1390916993,"master_branch":"master"},"pusher":{"name":"aman4you","email":"aman.goel@innoraft.com"}}';
   $values = json_decode($json);
-  $project_name = $values->repository->name;
-  $description = $values->commits[0]->message;
 
-  $result1 = NULL;
-  $output1 = NULL;
-  $issue_number = NULL;
-  // Fetch issue number from commit message. 
-  preg_match("/issue\s*#[0-9]+/i", $values->commits[0]->message, $output1);
-  if(count($output1) == 1) {
-    $result1 = explode('#', $output1[0]);
-    $issue_number = $result1[1];
-  }
+  $commits = 0;
+  $commits = count($values->commits);
+  for ($i=0; $i<$commits; $i++){     
+    $project_name = $values->repository->name;
+    $description = $values->commits[$i]->message;
   
-  $output2 = NULL;
-  $billable = NULL;
-  // Fetch billable information from commit message. 
-  preg_match("/\[\s*bill\s*:/i", $values->commits[0]->message, $output2);
-  if(count($output2) == 1) {
-    if(preg_match("/\[\s*bill\s*:\s*no\]/i", $values->commits[0]->message)) {
-      $billable = "Not Billable";
-    } elseif (preg_match("/\[\s*bill\s*:\s*yes\]/i", $values->commits[0]->message)) {
-      $billable = "Billable";
+    $result1 = NULL;
+    $output1 = NULL;
+    $issue_number = NULL;
+    // Fetch issue number from commit message. 
+    preg_match("/issue\s*#[0-9]+/i", $values->commits[$i]->message, $output1);
+    if(count($output1) == 1) {
+      $result1 = explode('#', $output1[0]);
+      $issue_number = $result1[1];
     }
-  }else {
-      $billable = "Not Billable";
-  }
   
-  $result2 = NULL;
-  $output3 = NULL;
-  $work_hour = NULL;
-  // Fetch work hour from commit message. 
-  preg_match("/\[\s*t\s*:\s*[0-9]+:[0-9]+\]/i", $values->commits[0]->message, $output3);
-  if(count($output3) == 1) {
-    preg_match("/[0-9]+:[0-9]+/i", $output3[0], $result2);
-    $work_hour = $result2[0];
-  } 
+    $output2 = NULL;
+    $billable = NULL;
+    // Fetch billable information from commit message. 
+    preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output2);
+    if(count($output2) == 1) {
+      if(preg_match("/\[\s*bill\s*:\s*no\]/i", $values->commits[$i]->message)) {
+        $billable = "Not Billable";
+      } elseif (preg_match("/\[\s*bill\s*:\s*yes\]/i", $values->commits[$i]->message)) {
+        $billable = "Billable";
+      }
+    }else {
+        $billable = "Not Billable";
+    }
   
-  // Make timesheet entry.
-  $node = new stdClass(); // Create a new node object
-  $node->type = "timesheet_entry"; // Or page, or whatever content type you like
-  node_object_prepare($node); // Set some default values
-  $node->language = LANGUAGE_NONE;
+    $result2 = NULL;
+    $output3 = NULL;
+    $work_hour = NULL;
+    // Fetch work hour from commit message. 
+    preg_match("/\[\s*t\s*:\s*[0-9]+:[0-9]+\]/i", $values->commits[$i]->message, $output3);
+    if(count($output3) == 1) {
+      preg_match("/[0-9]+:[0-9]+/i", $output3[0], $result2);
+      $work_hour = $result2[0];
+    } 
   
-  $node->status = 1; //(1 or 0): published or not
-  $node->promote = 1; //(1 or 0): promoted to front page
-  $node->comment = 1; // 0 = comments disabled, 1 = read only, 2 = read/write
-  $query1 = db_select('users', 'u');
-  $query1
-        ->fields('u', array('uid', 'mail'))
-        ->condition('u.mail', $values->pusher->email);
-  $result3 = $query1->execute();
-  $value1 = $result3->fetch();
-  $flag1 = 0;
-  if(!empty($value1)){
-    $node->uid = $value1->uid;
-    $flag1 = 1;
-  }
-  $node->field_issue_number[$node->language][0]['value'] = $issue_number;
-  $parts = explode(':', $work_hour);
-  $seconds =  $parts[0] * 3600 + $parts[1] * 60;
-  $node->field_work_hour[$node->language][0]['value'] = $seconds;
-  $node->field_billablenot_billable[$node->language][0]['value'] = $billable;
-  $node->field_approvednot_approved	[$node->language][0]['value'] = "Not Approved";
-  $node->field_invoice[$node->language][0]['value'] = "Not Invoice";  
-  $query2 = db_select('node', 'n');
-  $query2
-        ->fields('n', array('title', 'nid'))
-        ->condition('n.title', $project_name);
-  $result4 = $query2->execute();
-  $value2 = $result4->fetch();
-  $flag2 = 0;
-  if(!empty($value2)){
-    $node->field_project_name[$node->language][0]['target_id'] = $value2->nid;
-    $flag2 = 1;
-  }  
-  $node->body[$node->language][0]['value'] = $description;
-  $node->body[$node->language][0]['format'] = 'filtered_html';
-  $date = date("Y-m-d");
-  $node->field_date[$node->language][0]['value'] = strtotime($date);
+    // Make timesheet entry.
+    $node = new stdClass(); // Create a new node object
+    $node->type = "timesheet_entry"; // Or page, or whatever content type you like
+    node_object_prepare($node); // Set some default values
+    $node->language = LANGUAGE_NONE;
   
-  if($work_hour != NULL && $issue_number != NULL && $flag1 == 1 && $flag2 == 1){
-    //node_save($node);
+    $node->status = 1; //(1 or 0): published or not
+    $node->promote = 1; //(1 or 0): promoted to front page
+    $node->comment = 1; // 0 = comments disabled, 1 = read only, 2 = read/write
+    $query1 = db_select('users', 'u');
+    $query1
+          ->fields('u', array('uid', 'mail'))
+          ->condition('u.mail', $values->pusher->email);
+    $result3 = $query1->execute();
+    $value1 = $result3->fetch();
+    $flag1 = 0;
+    if(!empty($value1)){
+      $node->uid = $value1->uid;
+      $flag1 = 1;
+    }
+    $node->field_issue_number[$node->language][0]['value'] = $issue_number;
+    $parts = explode(':', $work_hour);
+    $seconds =  $parts[0] * 3600 + $parts[1] * 60;
+    $node->field_work_hour[$node->language][0]['value'] = $seconds;
+    $node->field_billablenot_billable[$node->language][0]['value'] = $billable;
+    $node->field_approvednot_approved	[$node->language][0]['value'] = "Not Approved";
+    $node->field_invoice[$node->language][0]['value'] = "Not Invoice";  
+    $query2 = db_select('node', 'n');
+    $query2
+          ->fields('n', array('title', 'nid'))
+          ->condition('n.title', $project_name);
+    $result4 = $query2->execute();
+    $value2 = $result4->fetch();
+    $flag2 = 0;
+    if(!empty($value2)){
+      $node->field_project_name[$node->language][0]['target_id'] = $value2->nid;
+      $flag2 = 1;
+    }  
+    $node->body[$node->language][0]['value'] = $description;
+    $node->body[$node->language][0]['format'] = 'filtered_html';
+    $date = date("Y-m-d");
+    $node->field_date[$node->language][0]['value'] = strtotime($date);
+  
+    if($work_hour != NULL && $issue_number != NULL && $flag1 == 1 && $flag2 == 1){
+      node_save($node);
+    }
   }
   
   return "Hello";
