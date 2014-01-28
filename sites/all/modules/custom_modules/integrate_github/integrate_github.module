@@ -109,5 +109,5 @@ function github_info(){
     node_save($node);
   }
   
-  return "hell";
+  return "hel";
 }
