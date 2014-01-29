@@ -11,11 +11,25 @@ function integrate_github_menu() {
   $items['github_info'] = array(
     'title' => t('Github Info'),
     'page callback' => 'github_info',
-    'access callback' => TRUE,
+    'access callback' => 'github_info_access',
     'type' => MENU_NORMAL_ITEM
   ); 
   
   return $items;
+}
+
+/**
+ * @desc 'Github info page' will access by Project Manager and Administrator.
+ * @return boolean.
+ */
+function  github_info_access() {
+  global $user;
+  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
 }
 
 /**
