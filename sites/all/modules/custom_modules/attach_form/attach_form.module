@@ -94,8 +94,7 @@ function invoice_report() {
   $query1 = db_select('field_data_field_project_name', 'pn');
   $query1->fields('pn', array('field_project_name_target_id'))
          ->distinct();
-  $result1 = $query1->execute()
-                    ->fetchAll();
+  $result1 = $query1->execute()->fetchAll();
   
   // Display timesheet entry according to group by project name.
   foreach ($result1 as $value1) {
@@ -231,8 +230,7 @@ function attach_form_form($form, &$form_state) {
   // G-comment : Indentation is not correct.
   // G-comment : There should be a blank space after the comma. ('type', 'title')
   // G-comment : There should be a blank space after the comma. ('n.type', 'project_entry')
-  $result1 = $query1->execute()
-                    ->fetchAll();
+  $result1 = $query1->execute()->fetchAll();
   
   $projects = array();
   $projects[NULL] = '-Any-';
@@ -324,8 +322,7 @@ function attach_form_form($form, &$form_state) {
   $query2->join('users_roles', 'ur', 'u.uid = ur.uid');
   $query2->join('role', 'r', 'r.rid = ur.rid');
   $query2->condition('r.name', array('Developer', 'Project Manager'), 'IN');
-  $result2 = $query2->execute()
-                    ->fetchAll();
+  $result2 = $query2->execute()->fetchAll();
        
   $members = array();
   $members[NULL] = '-Any-';

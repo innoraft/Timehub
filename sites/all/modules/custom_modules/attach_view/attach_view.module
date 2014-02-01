@@ -14,12 +14,10 @@ function attach_view_node_access($node, $op, $account) {
   
   // Project Manager not able to edit 'timesheet_entry' which invoiced.
   if($op == 'update' && $node->type == 'timesheet_entry') {
-    if($url == 'timesheet-pm' || $url == 'search') {
-      if(in_array('Project Manager', $user->roles)) {
-        if(isset($node->field_invoice[$node->language][0]['value'])) {
-          if($node->field_invoice[$node->language][0]['value'] == 'Invoice') {
-            return NODE_ACCESS_DENY;
-          }
+    if(in_array('Project Manager', $user->roles)) {
+      if(isset($node->field_invoice[$node->language][0]['value'])) {
+        if($node->field_invoice[$node->language][0]['value'] == 'Invoice') {
+          return NODE_ACCESS_DENY;
         }
       }
     }
@@ -37,7 +35,7 @@ function attach_view_node_access($node, $op, $account) {
       }
     }
   }
-}
+} 
 
 /**
  * @desc After submit 'timesheet_entry', view display based on current user.
@@ -46,13 +44,13 @@ function attach_view_node_access($node, $op, $account) {
 function attach_view_node_insert($node) {
   global $user;
   global $base_url;
-  if($node->type == 'timesheet_entry') {
-    if(in_array('Developer', $user->roles)) {
-      drupal_goto($base_url . "/timesheet-dev");
-    }
-    elseif (in_array('Project Manager', $user->roles)) {
+  if ($node->type == 'timesheet_entry') {
+    if (in_array('Project Manager', $user->roles)) {
       drupal_goto($base_url . "/timesheet-pm");
     }
+    elseif (in_array('Developer', $user->roles)) {
+      drupal_goto($base_url . "/timesheet-dev");
+    }  
   }
 }
 
@@ -68,65 +66,58 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id) {
   
   if($form_id == 'timesheet_entry_node_form') {
     $form['field_work_hour'][$form['language']['#value']][0]['value']['#description'] = 'Format: H:i';
-  }
-  
-  if($form_id == 'timesheet_entry_node_form') {
-    // Developer can access only his projects in the drop down at 'add content page'.
-    if (in_array("Developer", $user->roles)) {
-     $query1 = db_select('users', 'u');
-     $query1
-           ->fields('u', array('uid', 'name'))
-           ->condition('u.name', $user->name);
-     $result1 = $query1->execute();
-     $value1 = $result1->fetch();
    
-     $query = new EntityFieldQuery;
-     $query->entityCondition('entity_type', 'node')
-           ->entityCondition('bundle', 'project_entry')
-           ->fieldCondition('field_developer', 'target_id', $value1->uid);
-     $results = $query->execute();  
-     
-     if (!empty($results['node'])) {
-      $nids = array_keys($results['node']);
-     
-      foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
-        if(!in_array($key, $nids)) {
-          unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
-        }
+    $flag1 = 0;
+    $flag2 = 0;
+    $role1 = NULL;
+    // Check role of current user.
+    foreach ($user->roles as $value) {
+      if($value == 'Developer'){
+        $role1 = 'Developer';
+        $flag1 = 1;
+      } elseif ($value == 'Project Manager') {
+        $role1 = 'Project Manager';
+        $flag2 = 1;
       }
-     }
-     else {
-        foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $i => $value) {
-          unset($form['field_project_name'][$form['language']['#value']]['#options'][$i]);
-        }
-     }
-     
-     $form['field_approvednot_approved']['#access'] = FALSE;
-     $form['field_invoice']['#access'] = FALSE;
-    }
-  }
-
-  if($form_id == 'timesheet_entry_node_form') {
-    // Project Manager can access only his projects in the drop down at 'add content page'.
-    if (in_array("Project Manager", $user->roles)) {
-      $query2 = db_select('users', 'u');
-      $query2
-            ->fields('u', array('uid', 'name'))
-            ->condition('u.name', $user->name);
-      $result2 = $query2->execute();
-      $value2 = $result2->fetch();
-
-      $query = new EntityFieldQuery;
-      $query->entityCondition('entity_type', 'node')
-            ->entityCondition('bundle', 'project_entry')
-            ->fieldCondition('field_project_manager', 'target_id', $value2->uid);
-      $results = $query->execute();
       
-      if (!empty($results['node'])) {
-        $nids = array_keys($results['node']);
-
+      if($flag1 == 1 && $flag2 == 1){
+        $role1 = 'Dev-PM';
+      }
+    }
+    
+    // Check timesheet entry form is for add the timesheet entry.
+    if($form['nid']['#value'] == NULL){
+      if($role1 == 'Project Manager'){
+        $query1 = db_select('field_data_field_project_manager', 'pn');
+        $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
+        $query1->condition('pn.field_project_manager_target_id', $user->uid, '=');
+        
+        $result2 = $query1->execute()->fetchAll();
+      } elseif ($role1 == 'Developer') {
+        $query2 = db_select('field_data_field_developer', 'd');
+        $query2->fields('d', array('entity_id', 'field_developer_target_id'));
+        $query2->condition('d.field_developer_target_id', $user->uid, '=');
+        
+        $result2 = $query2->execute()->fetchAll();
+      } elseif ($role1 == 'Dev-PM') {
+        $query1 = db_select('field_data_field_project_manager', 'pn');
+        $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
+        $query1->condition('pn.field_project_manager_target_id', $user->uid, '=');
+      
+        $query2 = db_select('field_data_field_developer', 'd');
+        $query2->fields('d', array('entity_id', 'field_developer_target_id'));
+        $query2->condition('d.field_developer_target_id', $user->uid, '=');
+      
+        $result2 = $query1->union($query2)->execute()->fetchAll();
+      }             
+  
+      // Remove project name from select list that not alloted to user.
+      if (!empty($result2)) {
+        foreach ($result2 as $nid) {
+          $values[] = $nid->entity_id;
+        }
         foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
-          if(!in_array($key, $nids)) {
+          if(!in_array($key, $values)) {
             unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
           }
         }
@@ -135,8 +126,72 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id) {
           foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $i => $value) {
             unset($form['field_project_name'][$form['language']['#value']]['#options'][$i]);
           }
-      }
+      } // Check timesheet entry form is for edit the timesheet entry.
+    } elseif ($form['nid']['#value'] != NULL) {
+         $node1 = node_load($form['nid']['#value']);
+         $user1 = user_load($node1->uid);
+           
+         $flag3 = 0;
+         $flag4 = 0;
+         $role2 = NULL;
+         // Check role of user whose content to be edit.
+         foreach ($user1->roles as $value) {
+          if($value == 'Developer'){
+            $role2 = 'Developer';
+            $flag3 = 1;
+          } else if ($value == 'Project Manager') {
+            $role2 = 'Project Manager';
+            $flag4 = 1;
+          }
       
+          if($flag3 == 1 && $flag4 == 1){
+            $role2 = 'Dev-PM';
+          }
+        }
+          
+        if($role2 == 'Project Manager'){
+          $query1 = db_select('field_data_field_project_manager', 'pn');
+          $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
+          $query1->condition('pn.field_project_manager_target_id', $node1->uid, '=');
+        
+          $result2 = $query1->execute()->fetchAll();
+        } elseif ($role2 == 'Developer') {
+          $query2 = db_select('field_data_field_developer', 'd');
+          $query2->fields('d', array('entity_id', 'field_developer_target_id'));
+          $query2->condition('d.field_developer_target_id', $node1->uid, '=');
+        
+          $result2 = $query2->execute()->fetchAll();
+        } elseif ($role2 == 'Dev-PM') {
+          $query1 = db_select('field_data_field_project_manager', 'pn');
+          $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
+          $query1->condition('pn.field_project_manager_target_id', $node1->uid, '=');
+      
+          $query2 = db_select('field_data_field_developer', 'd');
+          $query2->fields('d', array('entity_id', 'field_developer_target_id'));
+          $query2->condition('d.field_developer_target_id', $node1->uid, '=');
+      
+          $result2 = $query1->union($query2)->execute()->fetchAll();
+        } 
+     
+        // Remove project name from select list that not alloted to user.
+        if (!empty($result2)) {
+          foreach ($result2 as $nid) {
+            $values[] = $nid->entity_id;
+          }
+          foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
+            if(!in_array($key, $values)) {
+              unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
+            }
+          }
+        }
+    }
+      
+    if($role1 == 'Developer'){
+      $form['field_approvednot_approved']['#access'] = FALSE;
+      $form['field_invoice']['#access'] = FALSE;
+    } elseif ($role1 == 'Project Manager') {
+      $form['field_invoice']['#access'] = FALSE;
+    } elseif ($role1 == 'Dev-PM') {
       $form['field_invoice']['#access'] = FALSE;
     }
   }
@@ -148,8 +203,7 @@ function  attach_view_form_alter(&$form,&$form_state,$form_id) {
     $query1->join('users_roles', 'ur', 'u.uid = ur.uid');
     $query1->join('role', 'r', 'r.rid = ur.rid');
     $query1->condition('r.name', array('Developer', 'Project Manager'), 'IN');
-    $result1 = $query1->execute()
-                      ->fetchAll();
+    $result1 = $query1->execute()->fetchAll();
        
     $rows = array();
     $rows[NULL] = '-Any-';
@@ -208,7 +262,11 @@ function attach_view_form($form, &$form_state, $vars) {
    '#disabled' => $invoice != NULL ? TRUE : FALSE,
    '#ajax' => array(
      'callback' => 'checkbox_status_change',
-     ),
+     'wrapper' => 'replace-wrapper-id-' . $vars,
+     'method' => 'replace',
+    ),
+    '#prefix' => '<div id="replace-wrapper-id-' .$vars . '">',
+    '#suffix' => '</div>',
    );
    // 'Nid' passed for further process.
    $form['node'] = array('#type' => 'hidden', '#value' => $vars);
@@ -221,7 +279,7 @@ function attach_view_form($form, &$form_state, $vars) {
  * @param $form_state.
  * @return.
  */
-function checkbox_status_change($form, &$form_state) {
+function checkbox_status_change(&$form, &$form_state) {
   $vars = node_load($form['node']['#value']);
 
   if($form_state['values']['replace'] == '1') {     
@@ -229,8 +287,13 @@ function checkbox_status_change($form, &$form_state) {
     node_save($vars);     
   }
   elseif ($form_state['values']['replace'] == '0') { 
-    $vars->field_approvednot_approved[$vars->language][0]['value'] = 'Not Approved';
-    node_save($vars); 
-  }  
-  return;
+    if($vars->field_invoice[$vars->language][0]['value'] != 'Invoice') {
+      $vars->field_approvednot_approved[$vars->language][0]['value'] = 'Not Approved';
+      node_save($vars); 
+    }
+    else {
+      $form['replace']['#attributes'] = array('disabled' => 'disabled', 'checked' => 'checked');
+    }
+  }
+  return $form['replace'];
 }

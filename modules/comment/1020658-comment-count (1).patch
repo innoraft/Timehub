@@ -1,0 +1,16 @@
+Index: modules/comment/comment.module
+===================================================================
+RCS file: /cvs/drupal/drupal/modules/comment/comment.module,v
+retrieving revision 1.932
+diff -u -r1.932 comment.module
+--- modules/comment/comment.module	13 Jan 2011 00:43:21 -0000	1.932
++++ modules/comment/comment.module	15 Jan 2011 17:09:24 -0000
+@@ -721,7 +721,7 @@
+   // Only attempt to render comments if the node has visible comments.
+   // Unpublished comments are not included in $node->comment_count, so show
+   // comments unconditionally if the user is an administrator.
+-  if (($node->comment_count && user_access('access comments')) || user_access('administer comments')) {
++  if ((!empty($node->comment_count) && user_access('access comments')) || user_access('administer comments')) {
+     $mode = variable_get('comment_default_mode_' . $node->type, COMMENT_MODE_THREADED);
+     $comments_per_page = variable_get('comment_default_per_page_' . $node->type, 50);
+     if ($cids = comment_get_thread($node, $mode, $comments_per_page)) {
