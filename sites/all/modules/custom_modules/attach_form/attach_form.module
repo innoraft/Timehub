@@ -94,8 +94,7 @@ function invoice_report() {
   $query1 = db_select('field_data_field_project_name', 'pn');
   $query1->fields('pn', array('field_project_name_target_id'))
          ->distinct();
-  $result1 = $query1->execute()
-                    ->fetchAll();
+  $result1 = $query1->execute()->fetchAll();
   
   // Display timesheet entry according to group by project name.
   foreach ($result1 as $value1) {
@@ -116,7 +115,7 @@ function invoice_report() {
         $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))));
         $total += $node->field_work_hour[$node->language][0]['value'];
       }
-      $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total))));
+      $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total)), 'bgcolor' => '#E6E6FA'));
     }
   }
   
@@ -184,7 +183,7 @@ function  invoice($values = '') {
       $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node2->field_issue_number[$node2->language][0]['value'])), array('data' => t(secToHM($node2->field_work_hour[$node2->language][0]['value']))));
       $total += $node2->field_work_hour[$node2->language][0]['value'];
     }
-    $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total))));
+    $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total)), 'bgcolor' => '#E6E6FA'));
   }
   return $datetime . theme('table', array('header' => $header, 'rows' => $rows));
 }
@@ -231,8 +230,7 @@ function attach_form_form($form, &$form_state) {
   // G-comment : Indentation is not correct.
   // G-comment : There should be a blank space after the comma. ('type', 'title')
   // G-comment : There should be a blank space after the comma. ('n.type', 'project_entry')
-  $result1 = $query1->execute()
-                    ->fetchAll();
+  $result1 = $query1->execute()->fetchAll();
   
   $projects = array();
   $projects[NULL] = '-Any-';
@@ -324,8 +322,7 @@ function attach_form_form($form, &$form_state) {
   $query2->join('users_roles', 'ur', 'u.uid = ur.uid');
   $query2->join('role', 'r', 'r.rid = ur.rid');
   $query2->condition('r.name', array('Developer', 'Project Manager'), 'IN');
-  $result2 = $query2->execute()
-                    ->fetchAll();
+  $result2 = $query2->execute()->fetchAll();
        
   $members = array();
   $members[NULL] = '-Any-';
