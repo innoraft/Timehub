@@ -115,7 +115,7 @@ function invoice_report() {
         $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))));
         $total += $node->field_work_hour[$node->language][0]['value'];
       }
-      $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total))));
+      $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total)), 'bgcolor' => '#E6E6FA'));
     }
   }
   
@@ -183,7 +183,7 @@ function  invoice($values = '') {
       $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node2->field_issue_number[$node2->language][0]['value'])), array('data' => t(secToHM($node2->field_work_hour[$node2->language][0]['value']))));
       $total += $node2->field_work_hour[$node2->language][0]['value'];
     }
-    $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total))));
+    $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total)), 'bgcolor' => '#E6E6FA'));
   }
   return $datetime . theme('table', array('header' => $header, 'rows' => $rows));
 }

@@ -6,41 +6,81 @@
         Purpose of the stylesheet follows.
 */
 
-.page-create-invoice .form-select{
-  width: 120px;
+/* Create invoice page */
+#edit-billable, #edit-projects, #edit-members {
+  width: 190px;
 }
 
-.page-create-invoice .form-item.form-type-select{
+.page-create-invoice .form-item.form-type-select {
   display: inline-table;
-  width: 150px;
+  width: 230px;
 }
 
-.form-item.form-type-textfield.form-item-issues{
+.page-create-invoice .form-text {
+  width: 180px;
+}
+
+.form-item.form-type-textfield.form-item-start { 
+  display: inline-block;
+  width: 230px;
+}
+
+.form-item.form-type-textfield.form-item-end {
+  display: inline-block;
+  width: 230px;
+}
+
+#edit-apply {
   display: block;
 }
 
-.page-create-invoice .form-text{
-  width: 150px;
-}
-
-.form-item.form-type-textfield.form-item-start{
-  display: inline-block;
-  width: 200px;
-}
-
-.form-item.form-type-textfield.form-item-end{
-  display: inline-block;
-  width: 200px;
-}
-
-#edit-apply{
-  display: block;
-}
-
-#time{
+/* Invoice report page */
+#time {
   float: right;
 }
 
-.views-exposed-widget.views-widget-filter-field_invoice_value{
+/* Search page */
+#edit-uid-wrapper {
+  margin-right: 80px;
+}
+
+.views-exposed-widget.views-widget-filter-field_invoice_value {
   float: none;
+}
+
+#edit-field-project-name-target-id {
+  width: 100px;
+}
+
+#edit-field-billablenot-billable-value {
+  width: 150px;
+}
+
+#edit-field-approvednot-approved-value {
+  width: 180px;
+}
+
+tr:hover td {
+background: #FFFEEE;
+}
+
+.views-field-field-date, .views-field-field-approvednot-approved, .views-field-field-billablenot-billable {
+  width: 70px;
+}
+
+.views-field-edit-node, .views-field-field-issue-number, .views-field-field-work-hour {
+  width: 50px;
+}
+
+/* Add timesheet entry page */
+#edit-field-date-und-0-value-datepicker-popup-0 {
+  width: 90px;
+}
+
+#edit-field-work-hour-und-0-value {
+  width: 90px;
+}
+
+#edit-field-project-name-und { 
+  width: 100px;
 }
