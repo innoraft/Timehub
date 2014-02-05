@@ -23,7 +23,7 @@ function integrate_github_menu() {
  */
 function integrate_github(){
   $json = $_POST["payload"]; // To access post data.
-  $values = json_decode($json, TRUE);
+  $values = drupal_json_decode($json);
   watchdog('data2', $values);
   
   $commits = count($values->commits);
