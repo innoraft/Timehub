@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the project entry feature feature.
+ */
+
+include_once 'project_entry_feature.features.inc';

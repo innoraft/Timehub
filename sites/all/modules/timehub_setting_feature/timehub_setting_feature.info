@@ -1,0 +1,13 @@
+name = timehub setting feature
+core = 7.x
+package = Features
+dependencies[] = features
+dependencies[] = menu
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[menu_custom][] = main-menu
+features[user_permission][] = edit own timesheet_entry content
+features[views_view][] = developer
+features[views_view][] = project_manager
+features_exclude[dependencies][entityreference] = entityreference
+features_exclude[dependencies][views] = views
