@@ -11,25 +11,11 @@ function integrate_github_menu() {
   $items['integrate_github'] = array(
     'title' => t('Integrate Github'),
     'page callback' => 'integrate_github',
-    'access callback' => 'integrate_github_access',
+    'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM
   ); 
   
   return $items;
-}
-
-/**
- * @desc 'Github info page' will access by Project Manager and Administrator.
- * @return boolean.
- */
-function  integrate_github_access() {
-  global $user;
-  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
 }
 
 /**
@@ -39,7 +25,7 @@ function  integrate_github_access() {
 function integrate_github(){
   $json = file_get_contents('php://input'); // To access post data.
   $values = json_decode($json);
-  watchdog('data', $values);
+  watchdog('values', $values);
   
   $commits = count($values->commits);
   for ($i=0; $i<$commits; $i++){  
