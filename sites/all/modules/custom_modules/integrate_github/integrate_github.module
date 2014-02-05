@@ -39,7 +39,7 @@ function  integrate_github_access() {
 function integrate_github(){
   $json = file_get_contents('php://input'); // To access post data in php.
   $values = json_decode($json);
-  watchdog('data', 'values');
+  watchdog('data', $values);
   $commits = count($values->commits);
   for ($i=0; $i<$commits; $i++){  
     $project_name = $values->repository->name;
