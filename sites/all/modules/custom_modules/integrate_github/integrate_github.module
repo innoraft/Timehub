@@ -22,6 +22,7 @@ function integrate_github_menu() {
  * @return String.
  */
 function integrate_github(){
+  watchdog('data1', 'value');
   $json = file_get_contents($_POST["payload"]); // To access post data.
   $values = json_decode($json);
   watchdog('data', $values);
