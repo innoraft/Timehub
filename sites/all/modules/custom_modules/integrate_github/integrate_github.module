@@ -9,9 +9,7 @@ function integrate_github_menu() {
   $items = array();  
   
   $items['integrate_github'] = array(
-    'title' => t('Integrate Github'),
     'page callback' => 'integrate_github',
-    'access callback' => 'integrate_github_access',
     'type' => MENU_NORMAL_ITEM
   ); 
   
@@ -19,27 +17,14 @@ function integrate_github_menu() {
 }
 
 /**
- * @desc 'Github info page' will access by Project Manager and Administrator.
- * @return boolean.
- */
-function  integrate_github_access() {
-  global $user;
-  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
-}
-
-/**
  * @desc Make timesheet entry using commit information.
  * @return String.
  */
 function integrate_github(){
-  $json = file_get_contents('php://input'); // To access post data in php.
+  $json = file_get_contents('php://input'); // To access post data.
   $values = json_decode($json);
-  watchdog($values, 'values');
+  watchdog('data', 'values');
+  
   $commits = count($values->commits);
   for ($i=0; $i<$commits; $i++){  
     $project_name = $values->repository->name;
