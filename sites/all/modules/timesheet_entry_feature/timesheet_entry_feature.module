@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the timesheet entry feature feature.
+ */
+
+include_once 'timesheet_entry_feature.features.inc';

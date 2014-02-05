@@ -8,10 +8,10 @@
 function integrate_github_menu() {
   $items = array();  
   
-  $items['github_info'] = array(
-    'title' => t('Github Info'),
-    'page callback' => 'github_info',
-    'access callback' => 'github_info_access',
+  $items['integrate_github'] = array(
+    'title' => t('Integrate Github'),
+    'page callback' => 'integrate_github',
+    'access callback' => 'integrate_github_access',
     'type' => MENU_NORMAL_ITEM
   ); 
   
@@ -22,7 +22,7 @@ function integrate_github_menu() {
  * @desc 'Github info page' will access by Project Manager and Administrator.
  * @return boolean.
  */
-function  github_info_access() {
+function  integrate_github_access() {
   global $user;
   if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
     return TRUE;
@@ -36,9 +36,10 @@ function  github_info_access() {
  * @desc Make timesheet entry using commit information.
  * @return String.
  */
-function github_info(){
-  $json = '{"ref":"refs/heads/testing","after":"4274cfd32bdd3093bca8459201618d8a64fe3ef4","before":"0000000000000000000000000000000000000000","created":true,"deleted":false,"forced":true,"compare":"https://github.com/aman4you/Timehub/compare/32e3d46bcef2^...4274cfd32bdd","commits":[{"id":"32e3d46bcef200e3dea17b8e9b702e39cd4b9708","distinct":true,"message":"first commit of first push\n\nref: innoraft/Timehub [t:7:15] issue#17","timestamp":"2014-01-28T05:46:06-08:00","url":"https://github.com/aman4you/Timehub/commit/32e3d46bcef200e3dea17b8e9b702e39cd4b9708","author":{"name":"aman","email":"aman.goel2452@gmail.com"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]},{"id":"4274cfd32bdd3093bca8459201618d8a64fe3ef4","distinct":true,"message":"second commit of first push\n\nref: innoraft/Timehub [t:7:15] issue#17","timestamp":"2014-01-28T05:48:20-08:00","url":"https://github.com/aman4you/Timehub/commit/4274cfd32bdd3093bca8459201618d8a64fe3ef4","author":{"name":"aman","email":"aman.goel2452@gmail.com"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]}],"head_commit":{"id":"4274cfd32bdd3093bca8459201618d8a64fe3ef4","distinct":true,"message":"second commit of first push\n\nref: innoraft/Timehub [t:7:15] issue#17","timestamp":"2014-01-28T05:48:20-08:00","url":"https://github.com/aman4you/Timehub/commit/4274cfd32bdd3093bca8459201618d8a64fe3ef4","author":{"name":"aman","email":"aman.goel2452@gmail.com"},"committer":{"name":"aman","email":"aman.goel2452@gmail.com"},"added":[],"removed":[],"modified":["sites/all/modules/custom_modules/integrate_github/integrate_github.module"]},"repository":{"id":13239933,"name":"Timehub","url":"https://github.com/aman4you/Timehub","description":"Timesheet entry to supplement project management on github","watchers":0,"stargazers":0,"forks":0,"fork":true,"size":8731,"owner":{"name":"aman4you","email":"aman.goel@innoraft.com"},"private":false,"open_issues":0,"has_issues":false,"has_downloads":true,"has_wiki":true,"language":"PHP","created_at":1380620476,"pushed_at":1390916993,"master_branch":"master"},"pusher":{"name":"aman4you","email":"aman.goel@innoraft.com"}}';
+function integrate_github(){
+  $json = file_get_contents('php://input'); // To access post data.
   $values = json_decode($json);
+  watchdog('data', $values);
   
   $commits = count($values->commits);
   for ($i=0; $i<$commits; $i++){  
