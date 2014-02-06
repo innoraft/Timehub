@@ -22,100 +22,101 @@ function integrate_github_menu() {
  * @return String.
  */
 function integrate_github(){
-  $json = $_POST["payload"]; // To access post data
+  $json = $_POST["payload"]; // To access post data.
   watchdog('data1', $json);
   $values = drupal_json_decode($json);
+  $values = serialize($values);
   watchdog('data2', $values);
   
-  $commits = count($values->commits);
-  for ($i=0; $i<$commits; $i++){  
-    $project_name = $values->repository->name;
-    $description = $values->commits[$i]->message;
-
-    $result1 = NULL;
-    $output1 = NULL;
-    $issue_number = NULL;
-    // Fetch issue number from commit message. 
-    preg_match("/issue\s*#[0-9]+/i", $values->commits[$i]->message, $output1);
-    if(count($output1) == 1) {
-      $result1 = explode('#', $output1[0]);
-      $issue_number = $result1[1];
-    }
-
-    $output2 = NULL;
-    $billable = NULL;
-    // Fetch billable information from commit message. 
-    preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output2);
-    if(count($output2) == 1) {
-      if(preg_match("/\[\s*bill\s*:\s*no\]/i", $values->commits[$i]->message)) {
-        $billable = "Not Billable";
-      } elseif (preg_match("/\[\s*bill\s*:\s*yes\]/i", $values->commits[$i]->message)) {
-        $billable = "Billable";
-      }
-    }else {
-        $billable = "Not Billable";
-    }
-
-    $result2 = NULL;
-    $output3 = NULL;
-    $work_hour = NULL;
-    // Fetch work hour from commit message. 
-    preg_match("/\[\s*t\s*:\s*[0-9]+:[0-9]+\]/i", $values->commits[$i]->message, $output3);
-    if(count($output3) == 1) {
-      preg_match("/[0-9]+:[0-9]+/i", $output3[0], $result2);
-      $work_hour = $result2[0];
-    } 
-
-    // Make timesheet entry.
-    $node = new stdClass(); // Create a new node object
-    $node->type = "timesheet_entry"; // Or page, or whatever content type you like
-    node_object_prepare($node); // Set some default values
-    $node->language = LANGUAGE_NONE;
-  
-    $node->status = 1; //(1 or 0): published or not
-    $node->promote = 1; //(1 or 0): promoted to front page
-    $node->comment = 1; // 0 = comments disabled, 1 = read only, 2 = read/write
-    $query1 = db_select('users', 'u');
-    $query1
-          ->fields('u', array('uid', 'mail'))
-          ->condition('u.mail', $values->pusher->email);
-    $result3 = $query1->execute();
-    $value1 = $result3->fetch();
-    $flag1 = 0;
-    if(!empty($value1)){
-      $node->uid = $value1->uid;
-      $flag1 = 1;
-    }
-   
-    $node->field_issue_number[$node->language][0]['value'] = $issue_number;
-    if($work_hour != NULL){
-      $parts = explode(':', $work_hour);
-      $seconds =  $parts[0] * 3600 + $parts[1] * 60;
-      $node->field_work_hour[$node->language][0]['value'] = $seconds;
-    }
-    $node->field_billablenot_billable[$node->language][0]['value'] = $billable;
-    $node->field_approvednot_approved	[$node->language][0]['value'] = "Not Approved";
-    $node->field_invoice[$node->language][0]['value'] = "Not Invoice";  
-    $query2 = db_select('node', 'n');
-    $query2
-          ->fields('n', array('title', 'nid'))
-          ->condition('n.title', $project_name);
-    $result4 = $query2->execute();
-    $value2 = $result4->fetch();
-    $flag2 = 0;
-    if(!empty($value2)){
-      $node->field_project_name[$node->language][0]['target_id'] = $value2->nid;
-      $flag2 = 1;
-    }  
-    $node->body[$node->language][0]['value'] = $description;
-    $node->body[$node->language][0]['format'] = 'filtered_html';
-    $date = date("Y-m-d");
-    $node->field_date[$node->language][0]['value'] = strtotime($date);
-  
-    if($work_hour != NULL && $issue_number != NULL && $flag1 == 1 && $flag2 == 1){
-      node_save($node);
-    }
-  }
-  
+//  $commits = count($values->commits);
+//  for ($i=0; $i<$commits; $i++){  
+//    $project_name = $values->repository->name;
+//    $description = $values->commits[$i]->message;
+//
+//    $result1 = NULL;
+//    $output1 = NULL;
+//    $issue_number = NULL;
+//    // Fetch issue number from commit message. 
+//    preg_match("/issue\s*#[0-9]+/i", $values->commits[$i]->message, $output1);
+//    if(count($output1) == 1) {
+//      $result1 = explode('#', $output1[0]);
+//      $issue_number = $result1[1];
+//    }
+//
+//    $output2 = NULL;
+//    $billable = NULL;
+//    // Fetch billable information from commit message. 
+//    preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output2);
+//    if(count($output2) == 1) {
+//      if(preg_match("/\[\s*bill\s*:\s*no\]/i", $values->commits[$i]->message)) {
+//        $billable = "Not Billable";
+//      } elseif (preg_match("/\[\s*bill\s*:\s*yes\]/i", $values->commits[$i]->message)) {
+//        $billable = "Billable";
+//      }
+//    }else {
+//        $billable = "Not Billable";
+//    }
+//
+//    $result2 = NULL;
+//    $output3 = NULL;
+//    $work_hour = NULL;
+//    // Fetch work hour from commit message. 
+//    preg_match("/\[\s*t\s*:\s*[0-9]+:[0-9]+\]/i", $values->commits[$i]->message, $output3);
+//    if(count($output3) == 1) {
+//      preg_match("/[0-9]+:[0-9]+/i", $output3[0], $result2);
+//      $work_hour = $result2[0];
+//    } 
+//
+//    // Make timesheet entry.
+//    $node = new stdClass(); // Create a new node object
+//    $node->type = "timesheet_entry"; // Or page, or whatever content type you like
+//    node_object_prepare($node); // Set some default values
+//    $node->language = LANGUAGE_NONE;
+//  
+//    $node->status = 1; //(1 or 0): published or not
+//    $node->promote = 1; //(1 or 0): promoted to front page
+//    $node->comment = 1; // 0 = comments disabled, 1 = read only, 2 = read/write
+//    $query1 = db_select('users', 'u');
+//    $query1
+//          ->fields('u', array('uid', 'mail'))
+//          ->condition('u.mail', $values->pusher->email);
+//    $result3 = $query1->execute();
+//    $value1 = $result3->fetch();
+//    $flag1 = 0;
+//    if(!empty($value1)){
+//      $node->uid = $value1->uid;
+//      $flag1 = 1;
+//    }
+//   
+//    $node->field_issue_number[$node->language][0]['value'] = $issue_number;
+//    if($work_hour != NULL){
+//      $parts = explode(':', $work_hour);
+//      $seconds =  $parts[0] * 3600 + $parts[1] * 60;
+//      $node->field_work_hour[$node->language][0]['value'] = $seconds;
+//    }
+//    $node->field_billablenot_billable[$node->language][0]['value'] = $billable;
+//    $node->field_approvednot_approved	[$node->language][0]['value'] = "Not Approved";
+//    $node->field_invoice[$node->language][0]['value'] = "Not Invoice";  
+//    $query2 = db_select('node', 'n');
+//    $query2
+//          ->fields('n', array('title', 'nid'))
+//          ->condition('n.title', $project_name);
+//    $result4 = $query2->execute();
+//    $value2 = $result4->fetch();
+//    $flag2 = 0;
+//    if(!empty($value2)){
+//      $node->field_project_name[$node->language][0]['target_id'] = $value2->nid;
+//      $flag2 = 1;
+//    }  
+//    $node->body[$node->language][0]['value'] = $description;
+//    $node->body[$node->language][0]['format'] = 'filtered_html';
+//    $date = date("Y-m-d");
+//    $node->field_date[$node->language][0]['value'] = strtotime($date);
+//  
+//    if($work_hour != NULL && $issue_number != NULL && $flag1 == 1 && $flag2 == 1){
+//      node_save($node);
+//    }
+//  }
+//  
   return "Hello";
 }
