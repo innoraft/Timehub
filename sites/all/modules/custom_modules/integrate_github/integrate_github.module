@@ -22,7 +22,7 @@ function integrate_github_menu() {
  * @return String.
  */
 function integrate_github(){
-  $json = file_get_contents('php://input'); // To access post data
+  $json = file_get_contents('php://input'); // To access post data.
   $values = json_decode($json);
   watchdog('data2', $values);
   
