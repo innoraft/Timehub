@@ -22,10 +22,10 @@ function integrate_github_menu() {
  * @return String.
  */
 function integrate_github(){
-  $json = $_POST["payload"]; // To access post data
+  $json = $_POST["payload"]; // To access post data.
   $values = json_decode($json);
   $commits = count($values->commits);
-  watchdog('value1', $commits);
+
   for ($i=0; $i<$commits; $i++){  
     $project_name = $values->repository->name;
     $description = $values->commits[$i]->message;
