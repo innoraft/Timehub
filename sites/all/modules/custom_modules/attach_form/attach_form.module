@@ -1,10 +1,14 @@
 <?php
-// G-comment : @file block is missing.
+
 /**
  * @file attach_form.module file.
+ * Module mainly perform the following functions :-
+ * 1. Creating Invoice page.
+ * 2. Creating Invoice report page.
+ * 3. Creating a form to filter timesheet entry to generate invoice.
  */
-
 drupal_add_css(drupal_get_path('module', 'attach_view') . '/attach_view.css');
+
 // G-comment : there shoud be spaces before and after the dot.
 /**
  * @desc implements hook_menu().
@@ -12,39 +16,39 @@ drupal_add_css(drupal_get_path('module', 'attach_view') . '/attach_view.css');
  * array.
  */
 function attach_form_menu() {
-  $items = array();  
-  
+  $items = array();
+
   $items['create_invoice'] = array(
     'title' => t('Create Invoice'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('attach_form_form'),
     'access callback' => 'create_invoice_access',
     'type' => MENU_NORMAL_ITEM
-  ); 
-  
+  );
+
   $items['invoice_report'] = array(
     'title' => t('Invoice Report'),
     'page callback' => 'invoice_report',
     'access callback' => 'invoice_report_access',
     'type' => MENU_NORMAL_ITEM
-  ); 
-  
+  );
+
   // page argument passed from 'create invoice page' after click submit.
   $items['invoice'] = array(
     'page callback' => 'invoice',
     'page argument' => array(1),
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM
-  ); 
-  
+  );
+
   // page argument passed from 'create invoice page' after click member name.
   $items['desc'] = array(
     'page callback' => 'description',
     'page argument' => array(1),
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM
-  ); 
-  
+  );
+
   return $items;
 }
 
@@ -52,9 +56,9 @@ function attach_form_menu() {
  * @desc 'create invoice page' will access by Project Manager and Administrator.
  * @return boolean.
  */
-function  create_invoice_access() {
+function create_invoice_access() {
   global $user;
-  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
+  if (in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
     return TRUE;
   }
   else {
@@ -66,9 +70,9 @@ function  create_invoice_access() {
  * @desc 'invoice report page' will access by Project Manager and Administrator.
  * @return boolean.
  */
-function  invoice_report_access() {
+function invoice_report_access() {
   global $user;
-  if(in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
+  if (in_array('Project Manager', $user->roles) || in_array('administrator', $user->roles)) {
     return TRUE;
   }
   else {
@@ -86,31 +90,31 @@ function invoice_report() {
   $date = $dt->format('n.j.Y');
   $time = $dt->format('H:i');
   $datetime = '<span>Date: ' . $date . '</span><span id = "time">Time: ' . $time . '</span>';
-  
+
   $header = array(array('data' => t('Project Name')), array('data' => t('Issue Number')), array('data' => t('Work Hour')));
   $rows = NULL;
-  
+
   // Select distinct project name target id for further use.
   $query1 = db_select('field_data_field_project_name', 'pn');
   $query1->fields('pn', array('field_project_name_target_id'))
-         ->distinct();
+      ->distinct();
   $result1 = $query1->execute()->fetchAll();
-  
+
   // Display timesheet entry according to group by project name.
   foreach ($result1 as $value1) {
     $query = new EntityFieldQuery;
     $query->entityCondition('entity_type', 'node')
-          ->entityCondition('bundle', 'timesheet_entry')
-          ->fieldCondition('field_project_name', 'target_id', $value1->field_project_name_target_id)
-          ->fieldCondition('field_invoice', 'value', 'Invoice');
+        ->entityCondition('bundle', 'timesheet_entry')
+        ->fieldCondition('field_project_name', 'target_id', $value1->field_project_name_target_id)
+        ->fieldCondition('field_invoice', 'value', 'Invoice');
     $results = $query->execute();
- 
+
     $total = 0;
     if (!empty($results['node'])) {
       $nids = array_keys($results['node']);
       $nodes = node_load_multiple($nids);
 
-      foreach ($nodes as $node) { 
+      foreach ($nodes as $node) {
         $project_name = node_load($node->field_project_name[$node->language][0]['target_id']);
         $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))));
         $total += $node->field_work_hour[$node->language][0]['value'];
@@ -118,7 +122,7 @@ function invoice_report() {
       $rows[] = array(array('data' => ''), array('data' => ''), array('data' => t('Total = ' . secToHM($total)), 'bgcolor' => '#E6E6FA'));
     }
   }
-  
+
   return $datetime . theme('table', array('header' => $header, 'rows' => $rows));
 }
 
@@ -130,10 +134,10 @@ function invoice_report() {
  * number.
  */
 function ensure2Digit($number) {
-    if($number < 10) {
-        $number = '0' . $number;
-    }
-    return $number;
+  if ($number < 10) {
+    $number = '0' . $number;
+  }
+  return $number;
 }
 
 /**
@@ -144,8 +148,8 @@ function ensure2Digit($number) {
  * number.
  */
 function secToHM($sec) {
-  $hour = ensure2Digit(floor($sec/3600));
-  $min = ensure2Digit(floor(($sec%3600)/60));
+  $hour = ensure2Digit(floor($sec / 3600));
+  $min = ensure2Digit(floor(($sec % 3600) / 60));
   return "$hour:$min";
 }
 
@@ -155,30 +159,30 @@ function secToHM($sec) {
  * initialize with null.
  * @return theme.
  */
-function  invoice($values = '') { 
+function invoice($values = '') {
   // Display current date and time at 'invoice page'.
   $dt = new DateTime();
   $date = $dt->format('n.j.Y');
   $time = $dt->format('H:i');
   $datetime = '<span>Date: ' . $date . '</span><span id = "time">Time: ' . $time . '</span>';
-  
+
   $header = array(array('data' => t('Project Name')), array('data' => t('Issue Number')), array('data' => t('Work Hour')));
   $rows = NULL;
   $nids = explode(',', $values);
   $nodes1 = node_load_multiple($nids);
-  
+
   // Select distinct project name with related nids for further use.
   $arr = array();
   foreach ($nodes1 as $node1) {
     $project_name = node_load($node1->field_project_name[$node1->language][0]['target_id']);
     $arr[$project_name->title][] = $node1->nid;
   }
-  
+
   // Display timesheet entry according to group by project name.
   foreach ($arr as $ar) {
     $total = 0;
     $nodes2 = node_load_multiple($ar);
-    foreach ($nodes2 as $node2) {  
+    foreach ($nodes2 as $node2) {
       $project_name = node_load($node2->field_project_name[$node2->language][0]['target_id']);
       $rows[] = array(array('data' => t($project_name->title)), array('data' => t($node2->field_issue_number[$node2->language][0]['value'])), array('data' => t(secToHM($node2->field_work_hour[$node2->language][0]['value']))));
       $total += $node2->field_work_hour[$node2->language][0]['value'];
@@ -197,7 +201,7 @@ function  invoice($values = '') {
  */
 function description($values = '') {
   $node = node_load($values);
-  if(!isset($node->body[$node->language][0]['value'])) {
+  if (!isset($node->body[$node->language][0]['value'])) {
     $description = '';
   }
   else {
@@ -222,18 +226,31 @@ function attach_form_form($form, &$form_state) {
 
   // Select project name.
   // G-comment : WCS for single line comments.
-  $query1 = db_select('node', 'n');
-  $query1
-        ->fields('n', array('type', 'title', 'nid'))
-        ->condition('n.type', 'project_entry');
-
+//  $query1 = db_select('node', 'n');
+//  $query1
+//      ->fields('n', array('type', 'title', 'nid'))
+//      ->condition('n.type', 'project_entry');
   // G-comment : Indentation is not correct.
   // G-comment : There should be a blank space after the comma. ('type', 'title')
   // G-comment : There should be a blank space after the comma. ('n.type', 'project_entry')
-  $result1 = $query1->execute()->fetchAll();
-  
+//  $result1 = $query1->execute()->fetchAll();
+
+  $query = new EntityFieldQuery;
+  $query->entityCondition('entity_type', 'node')
+      ->propertyCondition('type', 'project_entry');
+  $result = $query->execute();
+
   $projects = array();
   $projects[NULL] = '-Any-';
+  if (!empty($result['node'])) {
+    $nids = array_keys($result['node']);
+    $nodes = node_load_multiple($nids);
+
+    // Assign project name to array with value and key for select list.
+    foreach ($nodes as $node) {
+      $projects[$node->nid] = $node->title;
+    }
+  }
   /**
    * G-comment : Here a check on $result1 should be made to check wheather
    * it has some value or not.
@@ -241,13 +258,13 @@ function attach_form_form($form, &$form_state) {
    * G-comment : after executing the query we should fetch the data from
    * result using function fetchAssoc or etc.
    */
-  foreach ($result1 as $value1) {
-    /**
-     * G-comment : instead of making title key, some unique key should be used
-     * so that it can not overrite two nodes having same title, use nid instead.
-     */
-    $projects[$value1->nid] = $value1->title;
-  }
+  // foreach ($result1 as $value1) {
+  /**
+   * G-comment : instead of making title key, some unique key should be used
+   * so that it can not overrite two nodes having same title, use nid instead.
+   */
+  //   $projects[$value1->nid] = $value1->title;
+  // }
 
   $form['projects'] = array(
     '#type' => 'select',
@@ -315,22 +332,34 @@ function attach_form_form($form, &$form_state) {
 //      $members[$value1->uid] = $value1->name;
 //    }
 //  }
-
   // Only Developer and Project Manager names mentioned at 'member exposed filter' of 'search view'.
-  $query2 = db_select('users', 'u');
-  $query2->fields('u', array('uid', 'name'));
-  $query2->join('users_roles', 'ur', 'u.uid = ur.uid');
-  $query2->join('role', 'r', 'r.rid = ur.rid');
-  $query2->condition('r.name', array('Developer', 'Project Manager'), 'IN');
-  $result2 = $query2->execute()->fetchAll();
-       
   $members = array();
   $members[NULL] = '-Any-';
-  // Assign user name to array with value and key for select list.
-  foreach ($result2 as $value1) {
-    $members[$value1->uid] = $value1->name;
+
+  $users = entity_load('user');
+  foreach ($users as $user) {
+    foreach ($user->roles as $value) {
+      if ($value == 'Project Manager' || $value == 'Developer') {
+        // Assign user name to array with value and key for select list.
+        $members[$user->uid] = $user->name;
+      }
+    }
   }
-  
+
+//  $query2 = db_select('users', 'u');
+//  $query2->fields('u', array('uid', 'name'));
+//  $query2->join('users_roles', 'ur', 'u.uid = ur.uid');
+//  $query2->join('role', 'r', 'r.rid = ur.rid');
+//  $query2->condition('r.name', array('Developer', 'Project Manager'), 'IN');
+//  $result2 = $query2->execute()->fetchAll();
+//
+//  $members = array();
+//  $members[NULL] = '-Any-';
+//  // Assign user name to array with value and key for select list.
+//  foreach ($result2 as $value1) {
+//    $members[$value1->uid] = $value1->name;
+//  }
+
   $form['members'] = array(
     '#type' => 'select',
     '#title' => t('Members'),
@@ -351,7 +380,7 @@ function attach_form_form($form, &$form_state) {
     '#id' => 'issuesfield',
     '#type' => 'textfield',
     '#title' => t('Issue Number')
-    // G-comment : #title should be use with a t() function, e.g. t('ABC').
+      // G-comment : #title should be use with a t() function, e.g. t('ABC').
   );
 
   $form['start'] = array(
@@ -373,7 +402,7 @@ function attach_form_form($form, &$form_state) {
   $form['apply'] = array(
     '#type' => 'button',
     '#value' => 'Apply'
-    // G-comment : #value should be use with a t() function, e.g. t('ABC').
+      // G-comment : #value should be use with a t() function, e.g. t('ABC').
   );
 
   return $form;
@@ -386,83 +415,83 @@ function attach_form_form($form, &$form_state) {
  * @param $form_id.
  * @return.
  */
-function  attach_form_form_alter(&$form,&$form_state,$form_id) {
-  global $user; 
+function attach_form_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
   global $base_url;
 
   // Alter 'create invoice page' to display timesheet entry.
-  if($form_id == 'attach_form_form') {
+  if ($form_id == 'attach_form_form') {
     if (in_array("Project Manager", $user->roles) || in_array("administrator", $user->roles)) {
       $header = array(array('data' => t('Project Name')), array('data' => t('Issue Number')), array('data' => t('Work Hour')), array('data' => t('Member')), array('data' => t('Date')));
       $rows = NULL;
-        
+
       // Check either project name select with 'select list' or not.
       $project = 0;
-      if(isset($form_state['values']['projects'])) {
+      if (isset($form_state['values']['projects'])) {
         foreach ($form_state['values']['projects'] as $value1) {
-          if($value1 != NULL) {
-            $project = 1;            
+          if ($value1 != NULL) {
+            $project = 1;
           }
         }
       }
-      
+
       // Check either Billable/Not Billable select with 'select list' or not.
       $billable = NULL;
-      if(isset($form_state['values']['billable'])) {
+      if (isset($form_state['values']['billable'])) {
         $billable = $form_state['values']['billable'];
-      } 
-      
+      }
+
       // Check either member select with 'select list' or not.
       $member = 0;
-      if(isset($form_state['values']['members'])) {
+      if (isset($form_state['values']['members'])) {
         foreach ($form_state['values']['members'] as $value2) {
-          if($value2 != NULL) {
+          if ($value2 != NULL) {
             $member = 1;
           }
         }
       }
-      
+
       // Check either issue number given to 'text field' or not.
       $issues = NULL;
-      if(isset($form_state['values']['issues'])) {
-        if($form_state['values']['issues'] != NULL) {
+      if (isset($form_state['values']['issues'])) {
+        if ($form_state['values']['issues'] != NULL) {
           $str = $form_state['values']['issues'];
           $issues = explode(',', $str);
         }
-      }     
- 
+      }
+
       // Check either Start and End date given to 'text field' or not.
       $start = NULL;
       $end = NULL;
-      if(isset($form_state['values']['start'])) {
-        if(isset($form_state['values']['end'])) {
+      if (isset($form_state['values']['start'])) {
+        if (isset($form_state['values']['end'])) {
           $start = strtotime($form_state['values']['start']);
           $end = strtotime($form_state['values']['end']);
           $startend = array('start' => $start, 'end' => $end);
         }
-      }    
-      
+      }
+
       // Select node nids according to project name,Start & End date,billable/not billable,member and issue number.
       $query = new EntityFieldQuery;
       $query->entityCondition('entity_type', 'node')
-            ->entityCondition('bundle', 'timesheet_entry');       
-      if($member == 1) {
+          ->entityCondition('bundle', 'timesheet_entry');
+      if ($member == 1) {
         $query->propertyCondition('uid', $form_state['values']['members'], 'IN');
-      }  
+      }
       $query->fieldCondition('field_invoice', 'value', 'Not Invoice');
       $query->fieldCondition('field_approvednot_approved', 'value', 'Approved');
-      if($issues != NULL) {
+      if ($issues != NULL) {
         $query->fieldCondition('field_issue_number', 'value', $issues);
-      }       
-      if($billable != NULL) {
+      }
+      if ($billable != NULL) {
         $query->fieldCondition('field_billablenot_billable', 'value', $billable);
-      } 
-      if($project == 1) {
+      }
+      if ($project == 1) {
         $query->fieldCondition('field_project_name', 'target_id', $form_state['values']['projects'], 'IN');
-      } 
-      if($start != NULL && $end != NULL) {
+      }
+      if ($start != NULL && $end != NULL) {
         // Check either Start Date less than End Date or not.
-        if($end-$start > 0) {
+        if ($end - $start > 0) {
           $query->fieldCondition('field_date', 'value', array($startend['start'], $startend['end']), 'BETWEEN');
         }
         else {
@@ -470,8 +499,8 @@ function  attach_form_form_alter(&$form,&$form_state,$form_id) {
           $form_state['input']['start'] = NULL;
           $form_state['input']['end'] = NULL;
           return;
-        } 
-      }  
+        }
+      }
       elseif ($start == NULL && $end != NULL) {
         $query->fieldCondition('field_date', 'value', $end, '<=');
       }
@@ -486,8 +515,8 @@ function  attach_form_form_alter(&$form,&$form_state,$form_id) {
 
         // Display timesheet entry at 'create invoice page'.
         foreach ($nodes as $node) {
-         $project_name = node_load($node->field_project_name[$node->language][0]['target_id']);
-         $rows[$node->nid] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))), array('data' => t('<a href=' . $base_url . '/desc/' . $node->nid . ' target="_blank">' . $node->name . '</a>')), array('data' => t(date('Y-m-d', $node->field_date[$node->language][0]['value']))));
+          $project_name = node_load($node->field_project_name[$node->language][0]['target_id']);
+          $rows[$node->nid] = array(array('data' => t($project_name->title)), array('data' => t($node->field_issue_number[$node->language][0]['value'])), array('data' => t(secToHM($node->field_work_hour[$node->language][0]['value']))), array('data' => t('<a href=' . $base_url . '/desc/' . $node->nid . ' target="_blank">' . $node->name . '</a>')), array('data' => t(date('Y-m-d', $node->field_date[$node->language][0]['value']))));
         }
         $form['data'] = array(
           '#type' => 'tableselect',
@@ -499,7 +528,7 @@ function  attach_form_form_alter(&$form,&$form_state,$form_id) {
           '#value' => 'Create',
           '#submit' => array('submit_invoice')
         );
-      }     
+      }
       else {
         $form['submit']['#type'] = FALSE;
       }
@@ -539,7 +568,7 @@ function submit_invoice($form, &$form_state) {
 
   foreach ($form_state['values']['data'] as $key => $value) {
     // Save invoice and assign nids to create invoice report.
-    if($value != 0){
+    if ($value != 0) {
       $nids[] = $value;
       $node = node_load($value);
       $node->field_invoice[$node->language][0]['value'] = 'Invoice';
