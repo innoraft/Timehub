@@ -70,7 +70,7 @@ function integrate_github() {
     }
 
     $work_hour = NULL;
-    // Fetch work hour from commit message. 
+    // Fetch work hour from commit message
     if (preg_match("/\[\s*t\s*:\s*[0-9]+h\s*\]/i", $values->commits[$i]->message, $output)) {
       if (count($output) == 1) {
         preg_match("/[0-9]+/i", $output[0], $result);
