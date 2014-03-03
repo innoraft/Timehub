@@ -226,18 +226,31 @@ function attach_form_form($form, &$form_state) {
 
   // Select project name.
   // G-comment : WCS for single line comments.
-  $query1 = db_select('node', 'n');
-  $query1
-      ->fields('n', array('type', 'title', 'nid'))
-      ->condition('n.type', 'project_entry');
-
+//  $query1 = db_select('node', 'n');
+//  $query1
+//      ->fields('n', array('type', 'title', 'nid'))
+//      ->condition('n.type', 'project_entry');
   // G-comment : Indentation is not correct.
   // G-comment : There should be a blank space after the comma. ('type', 'title')
   // G-comment : There should be a blank space after the comma. ('n.type', 'project_entry')
-  $result1 = $query1->execute()->fetchAll();
+//  $result1 = $query1->execute()->fetchAll();
+
+  $query = new EntityFieldQuery;
+  $query->entityCondition('entity_type', 'node')
+      ->propertyCondition('type', 'project_entry');
+  $result = $query->execute();
 
   $projects = array();
   $projects[NULL] = '-Any-';
+  if (!empty($result['node'])) {
+    $nids = array_keys($result['node']);
+    $nodes = node_load_multiple($nids);
+
+    // Assign project name to array with value and key for select list.
+    foreach ($nodes as $node) {
+      $projects[$node->nid] = $node->title;
+    }
+  }
   /**
    * G-comment : Here a check on $result1 should be made to check wheather
    * it has some value or not.
@@ -245,13 +258,13 @@ function attach_form_form($form, &$form_state) {
    * G-comment : after executing the query we should fetch the data from
    * result using function fetchAssoc or etc.
    */
-  foreach ($result1 as $value1) {
-    /**
-     * G-comment : instead of making title key, some unique key should be used
-     * so that it can not overrite two nodes having same title, use nid instead.
-     */
-    $projects[$value1->nid] = $value1->title;
-  }
+  // foreach ($result1 as $value1) {
+  /**
+   * G-comment : instead of making title key, some unique key should be used
+   * so that it can not overrite two nodes having same title, use nid instead.
+   */
+  //   $projects[$value1->nid] = $value1->title;
+  // }
 
   $form['projects'] = array(
     '#type' => 'select',
@@ -320,19 +333,32 @@ function attach_form_form($form, &$form_state) {
 //    }
 //  }
   // Only Developer and Project Manager names mentioned at 'member exposed filter' of 'search view'.
-  $query2 = db_select('users', 'u');
-  $query2->fields('u', array('uid', 'name'));
-  $query2->join('users_roles', 'ur', 'u.uid = ur.uid');
-  $query2->join('role', 'r', 'r.rid = ur.rid');
-  $query2->condition('r.name', array('Developer', 'Project Manager'), 'IN');
-  $result2 = $query2->execute()->fetchAll();
-
   $members = array();
   $members[NULL] = '-Any-';
-  // Assign user name to array with value and key for select list.
-  foreach ($result2 as $value1) {
-    $members[$value1->uid] = $value1->name;
+
+  $users = entity_load('user');
+  foreach ($users as $user) {
+    foreach ($user->roles as $value) {
+      if ($value == 'Project Manager' || $value == 'Developer') {
+        // Assign user name to array with value and key for select list.
+        $members[$user->uid] = $user->name;
+      }
+    }
   }
+
+//  $query2 = db_select('users', 'u');
+//  $query2->fields('u', array('uid', 'name'));
+//  $query2->join('users_roles', 'ur', 'u.uid = ur.uid');
+//  $query2->join('role', 'r', 'r.rid = ur.rid');
+//  $query2->condition('r.name', array('Developer', 'Project Manager'), 'IN');
+//  $result2 = $query2->execute()->fetchAll();
+//
+//  $members = array();
+//  $members[NULL] = '-Any-';
+//  // Assign user name to array with value and key for select list.
+//  foreach ($result2 as $value1) {
+//    $members[$value1->uid] = $value1->name;
+//  }
 
   $form['members'] = array(
     '#type' => 'select',
