@@ -159,6 +159,10 @@ function integrate_github() {
     $node->field_date[$node->language][0]['value'] = strtotime($date);
 
     if ($work_hour != NULL && $issue_number != NULL && $flag1 == 1 && $flag2 == 1) {
+      dpm($work_hour);
+      dpm($issue_number);
+      dpm($flag1);
+      dpm($flag2);
       node_save($node);
     }
   }
