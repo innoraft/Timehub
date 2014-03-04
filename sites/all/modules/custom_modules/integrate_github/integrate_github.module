@@ -41,7 +41,7 @@ function integrate_github() {
     $output = NULL;
     $issue_number = NULL;
     // Fetch issue number from commit message. 
-    if (preg_match("/issues/[0-9]+/i", $values->commits[$i]->message, $output)) {
+    if (preg_match("/issues\/[0-9]+/i", $values->commits[$i]->message, $output)) {
       if (count($output) == 1) {
         $result = explode('/', $output[0]);
         $issue_number = $result[1];
@@ -53,7 +53,7 @@ function integrate_github() {
         $issue_number = $result[1];
       }
     }
-
+    
     $billable = NULL;
     // Fetch billable information from commit message. 
     preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output);
@@ -111,7 +111,7 @@ function integrate_github() {
         $work_hour = $hour[0] . ':' . $minute[0];
       }
     }
-    
+
     // Make timesheet entry.
     $node = new stdClass(); // Create a new node object
     $node->type = "timesheet_entry"; // Or page, or whatever content type you like
@@ -159,10 +159,6 @@ function integrate_github() {
     $node->field_date[$node->language][0]['value'] = strtotime($date);
 
     if ($work_hour != NULL && $issue_number != NULL && $flag1 == 1 && $flag2 == 1) {
-      dpm($work_hour);
-      dpm($issue_number);
-      dpm($flag1);
-      dpm($flag2);
       node_save($node);
     }
   }
