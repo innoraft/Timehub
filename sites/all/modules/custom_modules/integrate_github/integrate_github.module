@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @file integrate_github.module file
+ * @file integrate_github.module file.
  * Module mainly perform the following functions :-
  * 1. Developer and project manager are able to make timesheet
  * entry by commit information during push at github.
