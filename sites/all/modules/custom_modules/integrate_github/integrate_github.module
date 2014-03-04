@@ -53,7 +53,7 @@ function integrate_github() {
         $issue_number = $result[1];
       }
     }
-    
+
     $billable = NULL;
     // Fetch billable information from commit message. 
     preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output);
