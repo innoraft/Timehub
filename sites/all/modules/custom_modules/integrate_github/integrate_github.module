@@ -41,7 +41,7 @@ function integrate_github() {
     $output = NULL;
     $issue_number = NULL;
     // Fetch issue number from commit message. 
-    if (preg_match("/issues/[0-9]+/i", $values->commits[$i]->message, $output)) {
+    if (preg_match("/issues\/[0-9]+/i", $values->commits[$i]->message, $output)) {
       if (count($output) == 1) {
         $result = explode('/', $output[0]);
         $issue_number = $result[1];
