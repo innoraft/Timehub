@@ -18,7 +18,7 @@ drupal_add_css(drupal_get_path('module', 'attach_view') . '/attach_view.css');
 function attach_form_menu() {
   $items = array();
 
-  $items['create_invoice'] = array(
+  $items['create-invoice'] = array(
     'title' => t('Create Invoice'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('attach_form_form'),
@@ -26,7 +26,7 @@ function attach_form_menu() {
     'type' => MENU_NORMAL_ITEM
   );
 
-  $items['invoice_report'] = array(
+  $items['invoice-report'] = array(
     'title' => t('Invoice Report'),
     'page callback' => 'invoice_report',
     'access callback' => 'invoice_report_access',
