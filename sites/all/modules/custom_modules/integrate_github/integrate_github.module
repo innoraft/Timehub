@@ -16,6 +16,7 @@ function integrate_github_menu() {
   $items = array();
 
   $items['integrate_github'] = array(
+    'title' => t('Integrate Github'),
     'page callback' => 'integrate_github',
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM
