@@ -113,7 +113,7 @@ function integrate_github() {
     }
 
     // Make timesheet entry.
-    $node = new stdClass(); // Create a new node object
+    $node = new stdClass(); // Create a new node object.
     $node->type = "timesheet_entry"; // Or page, or whatever content type you like
     node_object_prepare($node); // Set some default values
     $node->language = LANGUAGE_NONE;
