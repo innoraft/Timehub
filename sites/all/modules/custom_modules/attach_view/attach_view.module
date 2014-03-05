@@ -71,157 +71,46 @@ function attach_view_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'timesheet_entry_node_form') {
     $form['field_work_hour'][$form['language']['#value']][0]['value']['#description'] = 'Format: H:i';
 
-    $flag1 = 0;
-    $flag2 = 0;
-    $role = NULL;
     // Check role of current user.
-    foreach ($user->roles as $value) {
-      if ($value == 'Developer') {
-        $role = 'Developer';
-        $flag1 = 1;
-      }
-      elseif ($value == 'Project Manager') {
-        $role = 'Project Manager';
-        $flag2 = 1;
-      }
-
-      if ($flag1 == 1 && $flag2 == 1) {
-        $role = 'Dev-PM';
-      }
-    }
-
+    $role = check_user_role($user->roles);
     // Check timesheet entry form is for add the timesheet entry.
     if ($form['nid']['#value'] == NULL) {
-      if ($role == 'Project Manager') {
-        $query1 = db_select('field_data_field_project_manager', 'pn');
-        $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
-        $query1->condition('pn.field_project_manager_target_id', $user->uid, '=');
-
-        $result2 = $query1->execute()->fetchAll();
-      }
-      elseif ($role == 'Developer') {
-        $query2 = db_select('field_data_field_developer', 'd');
-        $query2->fields('d', array('entity_id', 'field_developer_target_id'));
-        $query2->condition('d.field_developer_target_id', $user->uid, '=');
-
-        $result2 = $query2->execute()->fetchAll();
-      }
-      elseif ($role == 'Dev-PM') {
-        $query1 = db_select('field_data_field_project_manager', 'pn');
-        $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
-        $query1->condition('pn.field_project_manager_target_id', $user->uid, '=');
-
-        $query2 = db_select('field_data_field_developer', 'd');
-        $query2->fields('d', array('entity_id', 'field_developer_target_id'));
-        $query2->condition('d.field_developer_target_id', $user->uid, '=');
-
-        $result2 = $query1->union($query2)->execute()->fetchAll();
-      }
-
-      // Remove project name from select list that not alloted to user.
-      if (!empty($result2)) {
-        foreach ($result2 as $nid) {
-          $values[] = $nid->entity_id;
-        }
-        foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
-          if (!in_array($key, $values)) {
-            unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
-          }
-        }
-      }
-      else {
-        foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $i => $value) {
-          unset($form['field_project_name'][$form['language']['#value']]['#options'][$i]);
-        }
-      } // Check timesheet entry form is for edit the timesheet entry.
-    }
+      $form = remove_unalloted_projects($form, $role, $user->uid);
+    } // Check timesheet entry form is for edit the timesheet entry.
     elseif ($form['nid']['#value'] != NULL) {
       $node1 = node_load($form['nid']['#value']);
       $user1 = user_load($node1->uid);
-
-      $flag1 = 0;
-      $flag2 = 0;
-      // Check role of user whose content to be edit.
-      foreach ($user1->roles as $value) {
-        if ($value == 'Developer') {
-          $role = 'Developer';
-          $flag1 = 1;
-        }
-        else if ($value == 'Project Manager') {
-          $role = 'Project Manager';
-          $flag2 = 1;
-        }
-
-        if ($flag1 == 1 && $flag2 == 1) {
-          $role = 'Dev-PM';
-        }
-      }
-
-      if ($role == 'Project Manager') {
-        $query1 = db_select('field_data_field_project_manager', 'pn');
-        $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
-        $query1->condition('pn.field_project_manager_target_id', $node1->uid, '=');
-
-        $result2 = $query1->execute()->fetchAll();
-      }
-      elseif ($role == 'Developer') {
-        $query2 = db_select('field_data_field_developer', 'd');
-        $query2->fields('d', array('entity_id', 'field_developer_target_id'));
-        $query2->condition('d.field_developer_target_id', $node1->uid, '=');
-
-        $result2 = $query2->execute()->fetchAll();
-      }
-      elseif ($role == 'Dev-PM') {
-        $query1 = db_select('field_data_field_project_manager', 'pn');
-        $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
-        $query1->condition('pn.field_project_manager_target_id', $node1->uid, '=');
-
-        $query2 = db_select('field_data_field_developer', 'd');
-        $query2->fields('d', array('entity_id', 'field_developer_target_id'));
-        $query2->condition('d.field_developer_target_id', $node1->uid, '=');
-
-        $result2 = $query1->union($query2)->execute()->fetchAll();
-      }
-
-      // Remove project name from select list that not alloted to user.
-      if (!empty($result2)) {
-        foreach ($result2 as $nid) {
-          $values[] = $nid->entity_id;
-        }
-        foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
-          if (!in_array($key, $values)) {
-            unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
-          }
-        }
-      }
+      // Check role of user whose content edit.
+      $role = check_user_role($user1->roles);
+      $form = remove_unalloted_projects($form, $role, $node1->uid);
     }
 
     if ($role == 'Developer') {
       $form['field_approvednot_approved']['#access'] = FALSE;
       $form['field_invoice']['#access'] = FALSE;
     }
-    elseif ($role == 'Project Manager') {
-      $form['field_invoice']['#access'] = FALSE;
-    }
-    elseif ($role == 'Dev-PM') {
+    elseif ($role == 'Project Manager' || $role == 'Dev-PM') {
       $form['field_invoice']['#access'] = FALSE;
     }
   }
-
+  //TODO above code is repeated
+  //TODO why only one condition
   if ($form_id == 'views_exposed_form') {
-    // Only Developer and Project Manager names mentioned at 'member exposed filter' of 'search view'.
-    $members = array();
-    $members[NULL] = '-Any-';
+    $url = request_path();
+    if ($url == 'search') {
+      // Only Developer and Project Manager names mentioned at 'member exposed filter' of 'search view'.
+      $members = array();
+      $members[NULL] = '-Any-';
 
-    $users = entity_load('user');
-    foreach ($users as $user) {
-      foreach ($user->roles as $value) {
-        if ($value == 'Project Manager' || $value == 'Developer') {
-          // Assign user name to array with value and key for select list.
-          $members[$user->uid] = $user->name;
+      $users = entity_load('user');
+      foreach ($users as $user) {
+        foreach ($user->roles as $value) {
+          if ($value == 'Project Manager' || $value == 'Developer') {
+            // Assign user name to array with value and key for select list.
+            $members[$user->uid] = $user->name;
+          }
         }
       }
-    }
 //    $query1 = db_select('users', 'u');
 //    $query1->fields('u', array('uid', 'name'));
 //    $query1->join('users_roles', 'ur', 'u.uid = ur.uid');
@@ -235,38 +124,113 @@ function attach_view_form_alter(&$form, &$form_state, $form_id) {
 //    foreach ($result1 as $value1) {
 //      $rows[$value1->name] = $value1->name;
 //    }
-    // Replace textbox exposed filter with select list.
-    $form['uid'] = array(
-      '#type' => 'select',
-      '#options' => $members,
-      '#default_value' => array('-Any-')
-    );
+      // Replace textbox exposed filter with select list.
+      $form['uid'] = array(
+        '#type' => 'select',
+        '#options' => $members,
+        '#default_value' => array('-Any-')
+      );
 
-    //  All project name mentioned at 'project name exposed filter' of 'search view'.
-    $query = new EntityFieldQuery;
-    $query->entityCondition('entity_type', 'node')
-        ->propertyCondition('type', 'project_entry');
-    $result = $query->execute();
+      //  All project name mentioned at 'project name exposed filter' of 'search view'.
+      $query = new EntityFieldQuery;
+      $query->entityCondition('entity_type', 'node')
+          ->propertyCondition('type', 'project_entry');
+      $result = $query->execute();
 
-    $projects = array();
-    $projects[NULL] = '-Any-';
-    if (!empty($result['node'])) {
-      $nids = array_keys($result['node']);
-      $nodes = node_load_multiple($nids);
+      $projects = array();
+      $projects[NULL] = '-Any-';
+      if (!empty($result['node'])) {
+        $nids = array_keys($result['node']);
+        $nodes = node_load_multiple($nids);
 
-      // Assign project name to array with value and key for select list.
-      foreach ($nodes as $node) {
-        $projects[$node->nid] = $node->title;
+        // Assign project name to array with value and key for select list.
+        foreach ($nodes as $node) {
+          $projects[$node->nid] = $node->title;
+        }
       }
+
+      // Replace textbox exposed filter with select list.
+      $form['field_project_name_target_id'] = array(
+        '#type' => 'select',
+        '#options' => $projects,
+        '#default_value' => array('-Any-')
+      );
+    }
+  }
+}
+
+// Check user role to know alloted project.
+function check_user_role($user_roles) {
+  $flag1 = 0;
+  $flag2 = 0;
+  $role = NULL;
+
+  foreach ($user_roles as $value) {
+    if ($value == 'Developer') {
+      $role = 'Developer';
+      $flag1 = 1;
+    }
+    elseif ($value == 'Project Manager') {
+      $role = 'Project Manager';
+      $flag2 = 1;
     }
 
-    // Replace textbox exposed filter with select list.
-    $form['field_project_name_target_id'] = array(
-      '#type' => 'select',
-      '#options' => $projects,
-      '#default_value' => array('-Any-')
-    );
+    if ($flag1 == 1 && $flag2 == 1) {
+      $role = 'Dev-PM';
+    }
   }
+  return $role;
+}
+
+/*
+ * First determine the list of project that alloted to user than remove unalloted
+ * projects from select list.
+ */
+
+function remove_unalloted_projects($form, $role, $uid) {
+  if ($role == 'Project Manager') {
+    $query = db_select('field_data_field_project_manager', 'pn');
+    $query->fields('pn', array('entity_id', 'field_project_manager_target_id'));
+    $query->condition('pn.field_project_manager_target_id', $uid, '=');
+
+    $result = $query->execute()->fetchAll();
+  }
+  elseif ($role == 'Developer') {
+    $query = db_select('field_data_field_developer', 'd');
+    $query->fields('d', array('entity_id', 'field_developer_target_id'));
+    $query->condition('d.field_developer_target_id', $uid, '=');
+
+    $result = $query->execute()->fetchAll();
+  }
+  elseif ($role == 'Dev-PM') {
+    $query1 = db_select('field_data_field_project_manager', 'pn');
+    $query1->fields('pn', array('entity_id', 'field_project_manager_target_id'));
+    $query1->condition('pn.field_project_manager_target_id', $uid, '=');
+
+    $query2 = db_select('field_data_field_developer', 'd');
+    $query2->fields('d', array('entity_id', 'field_developer_target_id'));
+    $query2->condition('d.field_developer_target_id', $uid, '=');
+
+    $result = $query1->union($query2)->execute()->fetchAll();
+  }
+
+  // Remove project name from select list that not alloted to user.
+  if (!empty($result)) {
+    foreach ($result as $nid) {
+      $values[] = $nid->entity_id;
+    }
+    foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $key => $value) {
+      if (!in_array($key, $values)) {
+        unset($form['field_project_name'][$form['language']['#value']]['#options'][$key]);
+      }
+    }
+  }
+  else {
+    foreach ($form['field_project_name'][$form['language']['#value']]['#options'] as $i => $value) {
+      unset($form['field_project_name'][$form['language']['#value']]['#options'][$i]);
+    }
+  }
+  return $form;
 }
 
 /**
