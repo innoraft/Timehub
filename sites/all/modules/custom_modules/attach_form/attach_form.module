@@ -566,7 +566,7 @@ function submit_invoice($form, &$form_state) {
 
   $nids = array();
 
-  foreach ($form_state['values']['data'] as $key => $value) {
+  foreach ($form_state['values']['data'] as $value) {
     // Save invoice and assign nids to create invoice report.
     if ($value != 0) {
       $nids[] = $value;
