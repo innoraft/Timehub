@@ -34,7 +34,7 @@ function integrate_github() {
   $commits = count($values->commits);
 
   for ($i = 0; $i < $commits; $i++) {
-    if (!preg_match("/\[\s*t\s*:\s*none\s*\]/i", $values->commits[$i]->message)) {
+    if (preg_match("/\[\s*t\s*:\s*none\s*\]/i", $values->commits[$i]->message) == FALSE) {
       $project_name = $values->repository->name;
       $description = $values->commits[$i]->message;
 
