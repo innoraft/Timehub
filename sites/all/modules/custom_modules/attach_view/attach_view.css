@@ -60,8 +60,12 @@
   width: 180px;
 }
 
+#edit-field-invoice-value {
+  width: 110px;
+}
+
 tr:hover td {
-background: #FFFEEE;
+  background: #FFFEEE;
 }
 
 .views-field-field-date, .views-field-field-approvednot-approved, .views-field-field-billablenot-billable {
@@ -82,5 +86,5 @@ background: #FFFEEE;
 }
 
 #edit-field-project-name-und { 
-  width: 100px;
+  width: 150px;
 }
