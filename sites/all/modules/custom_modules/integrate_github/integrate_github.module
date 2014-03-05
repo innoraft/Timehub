@@ -29,46 +29,15 @@ function integrate_github_menu() {
  * @return String.
  */
 function integrate_github() {
-  $json = $_POST["payload"]; // To access post JSON data.
+  //$json = $_POST["payload"]; // To access post JSON data.
+  $json = '';
   $values = json_decode($json);
   $commits = count($values->commits);
 
   for ($i = 0; $i < $commits; $i++) {
-    if (preg_match("/\[\s*t\s*:\s*none\s*\]/i", $values->commits[$i]->message) == FALSE) {
+    if (!preg_match("/\[\s*t\s*:\s*none\s*\]/i", $values->commits[$i]->message)) {
       $project_name = $values->repository->name;
       $description = $values->commits[$i]->message;
-
-      $result = NULL;
-      $output = NULL;
-      $issue_number = NULL;
-      // Fetch issue number from commit message. 
-      if (preg_match("/issues\/[0-9]+/i", $values->commits[$i]->message, $output)) {
-        if (count($output) == 1) {
-          $result = explode('/', $output[0]);
-          $issue_number = $result[1];
-        }
-      }
-      elseif (preg_match("/#[0-9]+/i", $values->commits[$i]->message, $output)) {
-        if (count($output) == 1) {
-          $result = explode('#', $output[0]);
-          $issue_number = $result[1];
-        }
-      }
-
-      $billable = NULL;
-      // Fetch billable information from commit message. 
-      preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output);
-      if (count($output) == 1) {
-        if (preg_match("/\[\s*bill\s*:\s*no\s*\]/i", $values->commits[$i]->message)) {
-          $billable = "Not Billable";
-        }
-        elseif (preg_match("/\[\s*bill\s*:\s*yes\s*\]/i", $values->commits[$i]->message)) {
-          $billable = "Billable";
-        }
-      }
-      else {
-        $billable = "Not Billable";
-      }
 
       $work_hour = NULL;
       // Fetch work hour from commit message. 
@@ -111,6 +80,52 @@ function integrate_github() {
 
           $work_hour = $hour[0] . ':' . $minute[0];
         }
+      }
+
+      // If timetaken or none not given in commit than send email.
+      if ($work_hour == NULL) {
+        $user_info = user_load_by_mail($values->pusher->email);
+        $user_name = $user_info->name;
+        $message = 'User name ->' . $user_name . '<br /> Email id ->' . $values->pusher->email . '<br /> Project name ->' . $project_name . '<br /> Message ->' . $description;
+        $params = array(
+          'body' => $message,
+          'subject' => 'Timesheet entry commit message wrong format',
+        );
+        $to = array('aman.goel@innoraft.com','amangoel.goel3@gmail.com');
+        drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params, $from = NULL, $send = TRUE);
+        break;
+      }
+
+      $result = NULL;
+      $output = NULL;
+      $issue_number = NULL;
+      // Fetch issue number from commit message. 
+      if (preg_match("/issues\/[0-9]+/i", $values->commits[$i]->message, $output)) {
+        if (count($output) == 1) {
+          $result = explode('/', $output[0]);
+          $issue_number = $result[1];
+        }
+      }
+      elseif (preg_match("/#[0-9]+/i", $values->commits[$i]->message, $output)) {
+        if (count($output) == 1) {
+          $result = explode('#', $output[0]);
+          $issue_number = $result[1];
+        }
+      }
+
+      $billable = NULL;
+      // Fetch billable information from commit message. 
+      preg_match("/\[\s*bill\s*:/i", $values->commits[$i]->message, $output);
+      if (count($output) == 1) {
+        if (preg_match("/\[\s*bill\s*:\s*no\s*\]/i", $values->commits[$i]->message)) {
+          $billable = "Not Billable";
+        }
+        elseif (preg_match("/\[\s*bill\s*:\s*yes\s*\]/i", $values->commits[$i]->message)) {
+          $billable = "Billable";
+        }
+      }
+      else {
+        $billable = "Not Billable";
       }
 
       // Make timesheet entry.
@@ -162,4 +177,13 @@ function integrate_github() {
   }
 
   return "Hello";
+}
+
+function integrate_github_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'mail_info':
+      $message['subject'] = $params['subject'];
+      $message['body'] = $params['body'];
+      break;
+  }
 }
