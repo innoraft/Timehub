@@ -178,6 +178,9 @@ function integrate_github() {
   return "Hello";
 }
 
+/**
+ * @desc implements hook_mail() to describe the structure of mail.
+ */
 function integrate_github_mail($key, &$message, $params) {
   switch ($key) {
     case 'mail_info':
