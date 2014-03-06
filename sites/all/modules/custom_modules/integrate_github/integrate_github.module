@@ -190,6 +190,9 @@ function integrate_github_mail($key, &$message, $params) {
   }
 }
 
+/**
+ * @desc implements hook_mail_alter() to check mail.
+ */
 function integrate_github_mail_alter(&$message) {
   watchdog('mail message', $message);
 }
