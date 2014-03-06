@@ -90,7 +90,7 @@ function integrate_github() {
           'body' => $message,
           'subject' => 'Timesheet entry commit message wrong format',
         );
-        $to = array('mukesh.aggarwal@innoraft.com','basant.sharma@innoraft.com','sumeet.pareek@innoraft.com');
+        $to = array('mukesh.aggarwal@innoraft.com', 'basant.sharma@innoraft.com', 'sumeet.pareek@innoraft.com', 'aman.goel@innoraft.com');
         drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params, $from = NULL, $send = TRUE);
         break;
       }
@@ -185,4 +185,8 @@ function integrate_github_mail($key, &$message, $params) {
       $message['body'] = $params['body'];
       break;
   }
+}
+
+function integrate_github_mail_alter(&$message) {
+  watchdog('mail message', $message);
 }
