@@ -38,6 +38,8 @@ function integrate_github() {
       $project_name = $values->repository->name;
       $description = $values->commits[$i]->message;
 
+      $result = NULL;
+      $output = NULL;
       $work_hour = NULL;
       // Fetch work hour from commit message. 
       if (preg_match("/\[\s*t\s*:\s*[0-9]+h\s*\]/i", $values->commits[$i]->message, $output)) {
@@ -90,13 +92,11 @@ function integrate_github() {
           'body' => $message,
           'subject' => 'Timesheet entry commit message wrong format',
         );
-        $to = array('mukesh.aggarwal@innoraft.com', 'basant.sharma@innoraft.com', 'sumeet.pareek@innoraft.com', 'aman.goel@innoraft.com');
-        drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params, $from = NULL, $send = TRUE);
+        $to = 'aman.goel@innoraft.com';
+        drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params);
         break;
       }
 
-      $result = NULL;
-      $output = NULL;
       $issue_number = NULL;
       // Fetch issue number from commit message. 
       if (preg_match("/issues\/[0-9]+/i", $values->commits[$i]->message, $output)) {
@@ -178,15 +178,21 @@ function integrate_github() {
   return "Hello";
 }
 
+/**
+ * @desc implements hook_mail() to describe the structure of mail.
+ */
 function integrate_github_mail($key, &$message, $params) {
   switch ($key) {
     case 'mail_info':
       $message['subject'] = $params['subject'];
-      $message['body'] = $params['body'];
+      $message['body'][] = $params['body'];
       break;
   }
 }
 
+/**
+ * @desc implements hook_mail_alter() to alter mail.
+ */
 function integrate_github_mail_alter(&$message) {
   watchdog('mail message', $message);
 }
