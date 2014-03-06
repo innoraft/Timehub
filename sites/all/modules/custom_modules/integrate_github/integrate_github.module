@@ -91,8 +91,9 @@ function integrate_github() {
         $params = array(
           'body' => $message,
           'subject' => 'Timesheet entry commit message wrong format',
+          'headers' => array('Cc' => array('basant.sharma@innoraft.com', 'sumeet.pareek@innoraft.com')),
         );
-        $to = 'aman.goel@innoraft.com';
+        $to = 'mukesh.aggarwal@innoraft.com';
         drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params);
         break;
       }
@@ -186,13 +187,7 @@ function integrate_github_mail($key, &$message, $params) {
     case 'mail_info':
       $message['subject'] = $params['subject'];
       $message['body'][] = $params['body'];
+      $message['headers'] = $params['headers'];
       break;
   }
-}
-
-/**
- * @desc implements hook_mail_alter() to alter mail.
- */
-function integrate_github_mail_alter(&$message) {
-  watchdog('mail message', $message);
 }
