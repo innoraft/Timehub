@@ -180,7 +180,7 @@ function integrate_github() {
 }
 
 /**
- * @desc implements hook_mail() to structure the mail
+ * @desc implements hook_mail() to structure the mail.
  */
 function integrate_github_mail($key, &$message, $params) {
   switch ($key) {
