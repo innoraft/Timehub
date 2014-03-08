@@ -94,18 +94,18 @@ function integrate_github() {
         );
         $to = 'mukesh.aggarwal@innoraft.com,basant.sharma@innoraft.com,sumeet.pareek@innoraft.com';
         drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params);
-        break;
+        goto next_commit;
       }
 
       $issue_number = NULL;
       // Fetch issue number from commit message. 
-      if (preg_match("/issues\/[0-9]+/i", $values->commits[$i]->message, $output)) {
+      if (preg_match("issues\/[0-9]+", $values->commits[$i]->message, $output)) {
         if (count($output) == 1) {
           $result = explode('/', $output[0]);
           $issue_number = $result[1];
         }
       }
-      elseif (preg_match("/#[0-9]+/i", $values->commits[$i]->message, $output)) {
+      elseif (preg_match("#[0-9]+", $values->commits[$i]->message, $output)) {
         if (count($output) == 1) {
           $result = explode('#', $output[0]);
           $issue_number = $result[1];
@@ -173,13 +173,14 @@ function integrate_github() {
         node_save($node);
       }
     }
+    next_commit:
   }
 
   return "Hello";
 }
 
 /**
- * @desc implements hook_mail() to describe the structure of mail.
+ * @desc implements hook_mail() to describe the structure of mail
  */
 function integrate_github_mail($key, &$message, $params) {
   switch ($key) {
