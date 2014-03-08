@@ -93,7 +93,9 @@ function integrate_github() {
           'subject' => 'Timesheet entry commit message wrong format',
         );
         $to = 'mukesh.aggarwal@innoraft.com,basant.sharma@innoraft.com,sumeet.pareek@innoraft.com';
+        watchdog('previous', 'aman');
         drupal_mail('integrate_github', 'mail_info', $to, language_default(), $params);
+        watchdog('next', 'goel');
         goto next_commit;
       }
 
