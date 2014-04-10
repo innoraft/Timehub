@@ -8,6 +8,7 @@
  * 3. Creating a form to filter timesheet entry to generate invoice.
  */
 drupal_add_css(drupal_get_path('module', 'attach_view') . '/attach_view.css');
+drupal_add_js(drupal_get_path('module', 'attach_form') . '/attach_form.js');
 
 /**
  * @desc implements hook_menu().
@@ -264,7 +265,7 @@ function attach_form_form($form, &$form_state) {
     '#type' => 'select',
     '#title' => t('Members'),
     '#multiple' => TRUE,
-    '#options' => $members
+    '#options' => $members,
   );
 
   if ($url == 'create-invoice') {
@@ -360,11 +361,10 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
         $start = NULL;
         $end = NULL;
         if (isset($form_state['values']['start'])) {
-          if (isset($form_state['values']['end'])) {
-            $start = strtotime($form_state['values']['start']);
-            $end = strtotime($form_state['values']['end']);
-            $startend = array('start' => $start, 'end' => $end);
-          }
+          $start = strtotime($form_state['values']['start']);
+        }
+        if (isset($form_state['values']['end'])) {
+          $end = strtotime($form_state['values']['end']);
         }
 
         // Select node nids according to project name,Start & End date,billable/not billable,member and issue number.
@@ -388,6 +388,7 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
         if ($start != NULL && $end != NULL) {
           // Check either Start Date less than End Date or not.
           if ($end - $start > 0) {
+            $startend = array('start' => $start, 'end' => $end);
             $query->fieldCondition('field_date', 'value', array($startend['start'], $startend['end']), 'BETWEEN');
           }
           else {
@@ -455,11 +456,10 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
         $start = NULL;
         $end = NULL;
         if (isset($form_state['values']['start'])) {
-          if (isset($form_state['values']['end'])) {
-            $start = strtotime($form_state['values']['start']);
-            $end = strtotime($form_state['values']['end']);
-            $startend = array('start' => $start, 'end' => $end);
-          }
+          $start = strtotime($form_state['values']['start']);
+        }
+        if (isset($form_state['values']['end'])) {
+          $end = strtotime($form_state['values']['end']);
         }
 
         // Select node nids according to project name,Start & End date,billable/not billable,member and issue number.
@@ -477,6 +477,7 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
         if ($start != NULL && $end != NULL) {
           // Check either Start Date less than End Date or not.
           if ($end - $start > 0) {
+            $startend = array('start' => $start, 'end' => $end);
             $query->fieldCondition('field_date', 'value', array($startend['start'], $startend['end']), 'BETWEEN');
           }
           else {
@@ -649,11 +650,10 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
         $start = NULL;
         $end = NULL;
         if (isset($form_state['values']['start'])) {
-          if (isset($form_state['values']['end'])) {
-            $start = strtotime($form_state['values']['start']);
-            $end = strtotime($form_state['values']['end']);
-            $startend = array('start' => $start, 'end' => $end);
-          }
+          $start = strtotime($form_state['values']['start']);
+        }
+        if (isset($form_state['values']['end'])) {
+          $end = strtotime($form_state['values']['end']);
         }
 
         // Select node nids according to project name,Start & End date,billable/not billable,member and issue number.
@@ -674,6 +674,7 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
         if ($start != NULL && $end != NULL) {
           // Check either Start Date less than End Date or not.
           if ($end - $start > 0) {
+            $startend = array('start' => $start, 'end' => $end);
             $query->fieldCondition('field_date', 'value', array($startend['start'], $startend['end']), 'BETWEEN');
           }
           else {
@@ -695,11 +696,22 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
           $nids = array_keys($results['node']);
           $nodes = node_load_multiple($nids);
 
-          if (isset($form_state['values']['members']) && $start != NULL && $end != NULL) {
+          $users_uid = array();
+          if (isset($form_state['values']['members'])) {
+            if (!in_array(NULL, $form_state['values']['members'])) {
+              $users_uid = $form_state['values']['members'];
+            }
+            else {
+              array_shift($form_state['values']['members']);
+              $users_uid = $form_state['values']['members'];
+            }
+          }
+
+          if (!empty($users_uid) && ($start != NULL || $end != NULL)) {
             // Fetch members.
             $header = array();
-            $selected_members_count = count($form_state['values']['members']);
-            $selected_member_nodes = user_load_multiple($form_state['values']['members']);
+            $selected_members_count = count($users_uid);
+            $selected_member_nodes = user_load_multiple($users_uid);
             foreach ($selected_member_nodes as $selected_member_node) {
               $selected_members_names[] = $selected_member_node->name;
             }
@@ -709,64 +721,167 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
             }
 
             // Fetch date.
-            $formatted_dates = array();
-            while ($start <= $end) {
-              $formatted_dates[] = date('Y-m-d', $start);
-              $start = strtotime('+1 day', $start);
+            foreach ($nodes as $node) {
+              $dates[] = $node->field_date[$node->language][0]['value'];
             }
-
-            // Fetch work hour.
-            $formatted_work_hours = array();
-            $timestamp_work_hours = array();
-            foreach ($formatted_dates as $formatted_date) {
-              foreach ($form_state['values']['members'] as $selected_member) {
-                $formatted_work_hours[$formatted_date]['Date'] = $formatted_date;
-                foreach ($nodes as $node) {
-                  $timestamp_date = strtotime($formatted_date);
-                  $node_date = $node->field_date[$node->language][0]['value'];
-                  if ($node_date == $timestamp_date && $node->uid == $selected_member) {
-                    if (!isset($formatted_work_hours[$formatted_date][$selected_member])) {
-                      $formatted_work_hours[$formatted_date][$selected_member] = null;
-                    }
-                    if (!isset($timestamp_work_hours[$formatted_date][$selected_member])) {
-                      $timestamp_work_hours[$formatted_date][$selected_member] = null;
-                    }
-                    $formatted_work_hours[$formatted_date][$selected_member] += $node->field_work_hour['und'][0]['value'];
-                    $timestamp_work_hours[$formatted_date][$selected_member] += $node->field_work_hour['und'][0]['value'];
-                  }
-                }
-                if (!isset($formatted_work_hours[$formatted_date][$selected_member])) {
-                  $formatted_work_hours[$formatted_date][$selected_member] = null;
-                }
-                $formatted_work_hours[$formatted_date][$selected_member] = secToHM($formatted_work_hours[$formatted_date][$selected_member]);
-              }
+            $unique_dates = array_unique($dates);
+            foreach ($unique_dates as $unique_date) {
+              $formatted_dates[] = date('y-m-d', $unique_date);
             }
-
-            // Total work hour.
-            $timestamp_total_work_hours = array();
-            $formatted_total_work_hours = array();
-            foreach ($timestamp_work_hours as $timestamp_work_hour) {
-              foreach ($form_state['values']['members'] as $member_uid) {
-                foreach ($timestamp_work_hour as $uid => $hour) {
-                  if ($member_uid == $uid) {
-                    if (!isset($timestamp_total_work_hours[$member_uid])) {
-                      $timestamp_total_work_hours[$member_uid] = null;
-                    }
-                    $timestamp_total_work_hours[$member_uid] += $hour;
-                  }
-                }
-              }
-            }
-            $formatted_total_work_hours[] = array('data' => 'Total Work Hours', 'bgcolor' => '#ASBKFA');
-            foreach ($timestamp_total_work_hours as $uid => $timestamp_total_work_hour) {
-              $formatted_total_work_hours[$uid] = array('data' => secToHM($timestamp_total_work_hour), 'bgcolor' => '#ASBKFA');
-            }
-
-            $formatted_work_hours[] = $formatted_total_work_hours;
-            $form['data'] = array(
-              '#markup' => theme('table', array('header' => $header, 'rows' => $formatted_work_hours))
-            );
           }
+          elseif (!empty($users_uid)) {
+            // Fetch members.
+            $header = array();
+            $selected_members_count = count($users_uid);
+            $selected_member_nodes = user_load_multiple($users_uid);
+            foreach ($selected_member_nodes as $selected_member_node) {
+              $selected_members_names[] = $selected_member_node->name;
+            }
+            $header[] = 'Date';
+            for ($i = 0; $i < $selected_members_count; $i++) {
+              $header[] = $selected_members_names[$i];
+            }
+
+            // Fetch date.
+            $query = new EntityFieldQuery;
+            $query->entityCondition('entity_type', 'node')
+                ->entityCondition('bundle', 'timesheet_entry');
+            $results = $query->execute();
+            $nids = array_keys($results['node']);
+            $values = node_load_multiple($nids);
+            foreach ($values as $value) {
+              $dates[] = $value->field_date[$value->language][0]['value'];
+            }
+            $unique_dates = array_unique($dates);
+            foreach ($unique_dates as $unique_date) {
+              $formatted_dates[] = date('y-m-d', $unique_date);
+            }
+          }
+          elseif ($start != NULL || $end != NULL) {
+            // Fetch members.
+            $header = array();
+            $users = entity_load('user');
+            foreach ($users as $value) {
+              foreach ($value->roles as $role) {
+                if ($role == 'Project Manager' || $role == 'Developer') {
+                  $users_uid[$value->uid] = $value->uid;
+                }
+              }
+            }
+            $members_count = count($users_uid);
+            $member_nodes = user_load_multiple($users_uid);
+            foreach ($member_nodes as $member_node) {
+              $members_names[] = $member_node->name;
+            }
+            $header[] = 'Date';
+            for ($i = 0; $i < $members_count; $i++) {
+              $header[] = $members_names[$i];
+            }
+
+            // Fetch date.
+            foreach ($nodes as $node) {
+              $dates[] = $node->field_date[$node->language][0]['value'];
+            }
+            $unique_dates = array_unique($dates);
+            foreach ($unique_dates as $unique_date) {
+              $formatted_dates[] = date('y-m-d', $unique_date);
+            }
+          }
+          else {
+            // Fetch members.
+            $header = array();
+            $users = entity_load('user');
+            foreach ($users as $value) {
+              foreach ($value->roles as $role) {
+                if ($role == 'Project Manager' || $role == 'Developer') {
+                  $users_uid[$value->uid] = $value->uid;
+                }
+              }
+            }
+            $members_count = count($users_uid);
+            $member_nodes = user_load_multiple($users_uid);
+            foreach ($member_nodes as $member_node) {
+              $members_names[] = $member_node->name;
+            }
+            $header[] = 'Date';
+            for ($i = 0; $i < $members_count; $i++) {
+              $header[] = $members_names[$i];
+            }
+
+            // Fetch date.
+            $query = new EntityFieldQuery;
+            $query->entityCondition('entity_type', 'node')
+                ->entityCondition('bundle', 'timesheet_entry');
+            $results = $query->execute();
+            $nids = array_keys($results['node']);
+            $values = node_load_multiple($nids);
+            foreach ($values as $value) {
+              $dates[] = $value->field_date[$value->language][0]['value'];
+            }
+            $unique_dates = array_unique($dates);
+            foreach ($unique_dates as $unique_date) {
+              $formatted_dates[] = date('y-m-d', $unique_date);
+            }
+          }
+
+          // Fetch work hour.
+          $formatted_work_hours = array();
+          $timestamp_work_hours = array();
+          foreach ($formatted_dates as $formatted_date) {
+            foreach ($users_uid as $user_uid) {
+              $formatted_work_hours[$formatted_date]['Date'] = $formatted_date;
+              foreach ($nodes as $node) {
+                $timestamp_date = strtotime($formatted_date);
+                $node_date = $node->field_date[$node->language][0]['value'];
+                if ($node_date == $timestamp_date && $node->uid == $user_uid) {
+                  if (!isset($formatted_work_hours[$formatted_date][$user_uid])) {
+                    $formatted_work_hours[$formatted_date][$user_uid] = null;
+                  }
+                  if (!isset($timestamp_work_hours[$formatted_date][$user_uid])) {
+                    $timestamp_work_hours[$formatted_date][$user_uid] = null;
+                  }
+                  $formatted_work_hours[$formatted_date][$user_uid] += $node->field_work_hour['und'][0]['value'];
+                  $timestamp_work_hours[$formatted_date][$user_uid] += $node->field_work_hour['und'][0]['value'];
+                }
+              }
+              if (!isset($formatted_work_hours[$formatted_date][$user_uid])) {
+                $formatted_work_hours[$formatted_date][$user_uid] = null;
+              }
+              $formatted_work_hours[$formatted_date][$user_uid] = secToHM($formatted_work_hours[$formatted_date][$user_uid]);
+            }
+          }
+
+          // Total work hour.
+          $timestamp_total_work_hours = array();
+          $formatted_total_work_hours = array();
+          foreach ($timestamp_work_hours as $timestamp_work_hour) {
+            foreach ($users_uid as $member_uid) {
+              foreach ($timestamp_work_hour as $uid => $hour) {
+                if ($member_uid == $uid) {
+                  if (!isset($timestamp_total_work_hours[$member_uid])) {
+                    $timestamp_total_work_hours[$member_uid] = null;
+                  }
+                  $timestamp_total_work_hours[$member_uid] += $hour;
+                }
+                else {
+                  $hour = '00:00';
+                  if (!isset($timestamp_total_work_hours[$member_uid])) {
+                    $timestamp_total_work_hours[$member_uid] = null;
+                  }
+                  $timestamp_total_work_hours[$member_uid] += $hour;
+                }
+              }
+            }
+          }
+          $formatted_total_work_hours[] = array('data' => 'Total Work Hours', 'bgcolor' => '#ASBKFA');
+          foreach ($timestamp_total_work_hours as $uid => $timestamp_total_work_hour) {
+            $formatted_total_work_hours[$uid] = array('data' => secToHM($timestamp_total_work_hour), 'bgcolor' => '#ASBKFA');
+          }
+
+          $formatted_work_hours[] = $formatted_total_work_hours;
+          $form['data'] = array(
+            '#markup' => theme('table', array('header' => $header, 'rows' => $formatted_work_hours))
+          );
         }
       }
     }
