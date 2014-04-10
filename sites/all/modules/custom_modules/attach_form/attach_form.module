@@ -7,8 +7,6 @@
  * 2. Creating Invoice report page.
  * 3. Creating a form to filter timesheet entry to generate invoice.
  */
-drupal_add_css(drupal_get_path('module', 'attach_view') . '/attach_view.css');
-drupal_add_js(drupal_get_path('module', 'attach_form') . '/attach_form.js');
 
 /**
  * @desc implements hook_menu().
@@ -314,6 +312,8 @@ function attach_form_form_alter(&$form, &$form_state, $form_id) {
   global $user;
   global $base_url;
   $url = request_path();
+
+  drupal_add_css(drupal_get_path('module', 'attach_view') . '/attach_view.css');
 
   // Alter 'create invoice page' to display timesheet entry.
   if ($form_id == 'attach_form_form') {
