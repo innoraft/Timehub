@@ -6,7 +6,7 @@
         Purpose of the stylesheet follows.
 */
 
-/* Create invoice page */
+/* Create invoice page, Search work hour, Search timesheet */
 #edit-billable, #edit-projects, #edit-members {
   width: 190px;
 }
@@ -16,22 +16,25 @@
   width: 230px;
 }
 
+.page-search-work-hour .form-item.form-type-select {
+  display: inline-table;
+  width: 230px;
+}
+
+.form-item.form-type-select.form-item-billable {
+  margin-right: 400px;
+}
+
 .page-create-invoice .form-text {
   width: 180px;
 }
 
-.form-item.form-type-textfield.form-item-start { 
-  display: inline-block;
-  width: 230px;
-}
-
-.form-item.form-type-textfield.form-item-end {
-  display: inline-block;
-  width: 230px;
-}
-
 #edit-apply {
   display: block;
+}
+
+.container-inline-date{
+  display: inline;
 }
 
 /* Invoice report page */
